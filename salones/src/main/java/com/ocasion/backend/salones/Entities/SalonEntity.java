@@ -45,4 +45,10 @@ public class SalonEntity {
     private UbicacionEntity ubicacion;
     @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL)
     private List<DisponibilidadEntity> disponibilidades;
+
+    @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SalonServiciosEntity> serviciosAsignados;
+
+    @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InventarioSalonEntity> inventario;
 }
