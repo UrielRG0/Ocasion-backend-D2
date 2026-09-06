@@ -18,7 +18,7 @@ public class ServiciosController {
     }
 
     @PostMapping("/personalizado")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<ServiciosEntity> crearServicioPersonalizado(@RequestParam String nombre, @RequestParam String descripcion) {
         ServiciosEntity nuevoServicio = serviciosService.crearServicioPersonalizado(nombre, descripcion);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoServicio);
