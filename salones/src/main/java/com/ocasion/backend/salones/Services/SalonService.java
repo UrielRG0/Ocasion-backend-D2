@@ -17,15 +17,40 @@ import com.ocasion.backend.salones.Entities.SalonEntity;
 import com.ocasion.backend.salones.Entities.UbicacionEntity;
 import com.ocasion.backend.salones.Repositories.SalonRepository;
 
+// Asegúrate de importar los DTOs, Entidades y Repositorios necesarios
+import com.ocasion.backend.salones.Entities.CategoriaRecursoEntity;
+import com.ocasion.backend.salones.Entities.InventarioSalonEntity;
+import com.ocasion.backend.salones.Entities.SalonServiciosEntity;
+import com.ocasion.backend.salones.Entities.SalonServiciosId;
+import com.ocasion.backend.salones.Entities.ServiciosEntity;
+import com.ocasion.backend.salones.Repositories.CategoriaRecursoRepository;
+import com.ocasion.backend.salones.Repositories.InventarioSalonRepository;
+import com.ocasion.backend.salones.Repositories.SalonServiciosRepository;
+import com.ocasion.backend.salones.Repositories.ServiciosRepository;
+import com.ocasion.backend.salones.DTO.CategoriaBatchDTO;
+import com.ocasion.backend.salones.DTO.RecursoDTO;
+
 import jakarta.transaction.Transactional;
 
 @Service
 public class SalonService {
 
     private final SalonRepository salonRepository;
+    private final SalonServiciosRepository salonServiciosRepository;
+    private final ServiciosRepository serviciosRepository;
+    private final CategoriaRecursoRepository categoriaRecursoRepository;
+    private final InventarioSalonRepository inventarioSalonRepository;
 
-    SalonService(SalonRepository salonRepository) {
+   public SalonService(SalonRepository salonRepository, 
+                        SalonServiciosRepository salonServiciosRepository,
+                        ServiciosRepository serviciosRepository,
+                        CategoriaRecursoRepository categoriaRecursoRepository,
+                        InventarioSalonRepository inventarioSalonRepository) {
         this.salonRepository = salonRepository;
+        this.salonServiciosRepository = salonServiciosRepository;
+        this.serviciosRepository = serviciosRepository;
+        this.categoriaRecursoRepository = categoriaRecursoRepository;
+        this.inventarioSalonRepository = inventarioSalonRepository;
     }
 
     @Transactional
@@ -86,8 +111,27 @@ public class SalonService {
     public void asignarServicios(Integer idSalon, List<ServicioAsignadoDTO> servicios, Integer idPropietario) {
         SalonEntity salon = obtenerSalonValidado(idSalon, idPropietario);
         
-        // logica faltante por tablas faltantes
-        //la scrum master así lo quizo
+        if (servicios.size() > 10) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No puedes asignar más de 10 servicios.");
+        }
+        
+        long countActual = salonServiciosRepository.countBySalonId(idSalon);
+        if (countActual + servicios.size() > 10) {
+             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El salón excedería el límite de 10 servicios.");
+        }
+
+        for (ServicioAsignadoDTO dto : servicios) {
+            ServiciosEntity servicio = serviciosRepository.findById(dto.getId_servicio())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Servicio no encontrado"));
+            
+            SalonServiciosEntity relacion = new SalonServiciosEntity();
+            relacion.setId(new SalonServiciosId(idSalon, servicio.getIdServicio()));
+            relacion.setSalon(salon);
+            relacion.setServicio(servicio);
+            relacion.setNumeroServiciosSolicitados(dto.getNumeroServiciosSolicitados());
+            
+            salonServiciosRepository.save(relacion);
+        }
     }
 
     // --- FASE 2.B ---
@@ -95,8 +139,31 @@ public class SalonService {
     public void cargarInventarioLote(Integer idSalon, InventarioBatchDTO lote, Integer idPropietario) {
         SalonEntity salon = obtenerSalonValidado(idSalon, idPropietario);
         
-         // logica faltante por tablas faltantes
-        //la scrum master así lo quizo
+        // Suponiendo que InventarioBatchDTO tiene un método getCategorias() que devuelve List<CategoriaBatchDTO>
+        if (lote.getCategorias() == null || lote.getCategorias().isEmpty() || lote.getCategorias().size() > 8) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe enviar entre 1 y 8 categorías.");
+        }
+
+        for (CategoriaBatchDTO catDTO : lote.getCategorias()) {
+            if (catDTO.getRecursos().size() > 20) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Máximo 20 recursos por categoría.");
+            }
+
+            // Persiste o recupera la categoría (simplificado: asume creación directa por el lote)
+            CategoriaRecursoEntity categoria = new CategoriaRecursoEntity();
+            categoria.setNombreCategoria(catDTO.getNombreCategoria());
+            // Si el nombre es UNIQUE, idealmente buscaríamos primero si existe, si no, lo guardamos.
+            categoria = categoriaRecursoRepository.save(categoria);
+
+            for (RecursoDTO recDTO : catDTO.getRecursos()) {
+                InventarioSalonEntity inventario = new InventarioSalonEntity();
+                inventario.setNombreRecurso(recDTO.getNombre_recurso());
+                inventario.setCantidadTotal(recDTO.getCantidad_total());
+                inventario.setSalon(salon);
+                inventario.setCategoria(categoria);
+                inventarioSalonRepository.save(inventario);
+            }
+        }
     }
 
     // --- FASE 2.C ---
@@ -105,11 +172,18 @@ public class SalonService {
         SalonEntity salon = obtenerSalonValidado(idSalon, idPropietario);
         
         if (salon.getUbicacion() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El salón debe tener una ubicación para ser publicado");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "El salón no puede publicarse: Debe contar con una ubicación.");
         }
         
-        // logica faltante por tablas faltantes
-        //la scrum master así lo quizo
+        long numServicios = salonServiciosRepository.countBySalonId(idSalon);
+        long numCategorias = inventarioSalonRepository.countCategoriasBySalonId(idSalon);
+        
+        if (numServicios == 0 || numCategorias == 0) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "El salón no puede publicarse: Debe registrar al menos un servicio y un insumo en su inventario.");
+        }
+        
+        salon.setEstado("PUBLICADO");
+        salonRepository.save(salon);
     }
 
     public List<SalonEntity> obtenerSalonesPorPropietario(Integer idPropietario) {

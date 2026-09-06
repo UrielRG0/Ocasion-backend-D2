@@ -48,4 +48,10 @@ public class SalonEntity {
     @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference 
     private List<DisponibilidadEntity> disponibilidades;
+
+    @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SalonServiciosEntity> serviciosAsignados;
+
+    @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InventarioSalonEntity> inventario;
 }
