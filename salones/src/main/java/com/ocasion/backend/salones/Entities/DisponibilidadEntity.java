@@ -3,6 +3,9 @@ package com.ocasion.backend.salones.Entities;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,6 +37,7 @@ public class DisponibilidadEntity {
     @Column(name="observaciones")
     private String observaciones;
     @ManyToOne
-    @JoinColumn(name = "Salonid_salon", nullable = false)
+    @JoinColumn(name = "salon_id")
+    @JsonBackReference
     private SalonEntity salon;
 }  

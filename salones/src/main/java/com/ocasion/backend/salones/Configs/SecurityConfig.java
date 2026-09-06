@@ -29,7 +29,6 @@ public class SecurityConfig {
             
             // Configuración de rutas
             .authorizeHttpRequests(auth -> auth
-                // Ejemplo: Si quieres que cualquiera pueda ver los salones sin estar logueado
                 .requestMatchers("/api/salones/publicos/**").permitAll()
                 // Cualquier otra petición (como crear, editar o borrar) requerirá un token válido
                 .anyRequest().authenticated()

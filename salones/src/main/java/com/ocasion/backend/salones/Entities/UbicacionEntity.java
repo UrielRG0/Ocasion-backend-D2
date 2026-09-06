@@ -2,6 +2,8 @@ package com.ocasion.backend.salones.Entities;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,6 +40,7 @@ public class UbicacionEntity {
 
     @OneToOne
     @JoinColumn(name = "Salonid_salon", nullable = false, unique = true)
+    @JsonBackReference
     private SalonEntity salon;
 
 }

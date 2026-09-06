@@ -2,6 +2,8 @@ package com.ocasion.backend.salones.Configs;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders; // <- Importación nueva
+import io.jsonwebtoken.security.Keys; // <- Importación nueva
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,13 +16,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.security.Key; // <- Importación nueva
+import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
     @Value("${jwt.secret}")
     private String secretKey;
+
+    private Key getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -31,28 +39,27 @@ public class JwtFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             try {
-                // Aquí ocurre la magia: si la firma no coincide o expiró, lanzará una excepción
                 Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(secretKey.getBytes())
+                        .setSigningKey(getSignInKey()) 
                         .build()
                         .parseClaimsJws(token)
                         .getBody();
 
-                // Extraemos la información (Asegúrate de que tu MS de usuarios guarde estos datos en el token)
-                String userId = claims.getSubject(); // O el claim donde guardes el id_user
-                String role = claims.get("rol", String.class); 
-
-                if (role != null && !role.startsWith("ROLE_")) {
-                    role = "ROLE_" + role;
-                }
+                String userId = claims.get("id_usuario").toString();
+                List<String> rolesToken = claims.get("roles", List.class);
+                List<SimpleGrantedAuthority> authorities = rolesToken.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .toList();
 
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        userId, null, Collections.singletonList(new SimpleGrantedAuthority(role))
+                        userId, null, authorities
                 );
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
             } catch (Exception e) {
+                // Imprime el error para que no sea silencioso si vuelve a fallar
+                System.err.println("Error validando JWT en Dom2: " + e.getMessage());
                 SecurityContextHolder.clearContext();
             }
         }

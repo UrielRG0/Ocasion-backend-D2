@@ -35,33 +35,33 @@ public class SalonController {
     }
 
     @PostMapping("/fase1")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<Map<String, Object>> crearFase1(@Valid @RequestBody SalonCreateFase1DTO dto) {
         Map<String, Object> response = salonService.crearFase1(dto, getPropietarioId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/propietario")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<List<SalonEntity>> listarMisSalones() {
         return ResponseEntity.ok(salonService.obtenerSalonesPorPropietario(getPropietarioId()));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<SalonEntity> actualizarSalon(@PathVariable Integer id, @Valid @RequestBody SalonCreateFase1DTO dto) {
         return ResponseEntity.ok(salonService.actualizarSalon(id, dto, getPropietarioId()));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> eliminarSalon(@PathVariable Integer id) {
         salonService.eliminarSalon(id, getPropietarioId());
         return ResponseEntity.ok("Salón eliminado exitosamente");
     }
 
     @PostMapping("/{id}/disponibilidad")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<DisponibilidadEntity> registrarBloqueo(@PathVariable Integer id, @Valid @RequestBody DisponibilidadDTO dto) {
         return ResponseEntity.ok(disponibilidadService.registrarBloqueo(id, dto, getPropietarioId()));
     }

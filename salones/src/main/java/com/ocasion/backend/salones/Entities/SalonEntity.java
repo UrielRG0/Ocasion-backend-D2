@@ -3,6 +3,8 @@ package com.ocasion.backend.salones.Entities;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,9 +42,10 @@ public class SalonEntity {
     @Column(name="estado",nullable = false)
     private  String estado;
                    
-    // Relaciones (Bidireccionales opcionales para facilitar consultas)
     @OneToOne(mappedBy = "salon", cascade = CascadeType.ALL)
+    @JsonManagedReference 
     private UbicacionEntity ubicacion;
-    @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference 
     private List<DisponibilidadEntity> disponibilidades;
 }
