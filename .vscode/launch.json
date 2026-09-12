@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "SalonesApplication",
+            "request": "launch",
+            "mainClass": "com.ocasion.backend.salones.SalonesApplication",
+            "projectName": "salones",
+            "env": {
+                "HOST": "172.30.219.232",
+                "PORT": "3306",
+                "DB_USER":"root",
+                "DB_PASSWORD": "dom2dbOcasion",
+                "JWT_SECRET":"bXlTZWNyZXRLZXkxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTA="
+            }
+        }
+    ]
+}
