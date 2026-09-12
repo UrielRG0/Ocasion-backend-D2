@@ -87,7 +87,7 @@ public class SalonController {
 
     // --- FASE 2.A: Asignación de Servicios ---
     @PostMapping("/{id}/servicios")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> asignarServicios(@PathVariable Integer id, @Valid @RequestBody List<ServicioAsignadoDTO> dto) {
         salonService.asignarServicios(id, dto, getPropietarioId());
         return ResponseEntity.status(HttpStatus.CREATED).body("Servicios asignados correctamente.");
@@ -95,7 +95,7 @@ public class SalonController {
 
     // --- FASE 2.B: Carga de Inventario por Lote ---
     @PostMapping("/{id}/inventario-lote")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> cargarInventarioLote(@PathVariable Integer id, @Valid @RequestBody InventarioBatchDTO dto) {
         salonService.cargarInventarioLote(id, dto, getPropietarioId());
         return ResponseEntity.status(HttpStatus.CREATED).body("Inventario estructurado cargado correctamente.");
@@ -103,7 +103,7 @@ public class SalonController {
 
     // --- FASE 2.C: Publicación Final ---
     @PatchMapping("/{id}/publicar")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> publicarSalon(@PathVariable Integer id) {
         salonService.publicarSalon(id, getPropietarioId());
         return ResponseEntity.ok("El salón ha sido publicado exitosamente.");
@@ -111,7 +111,7 @@ public class SalonController {
 
     // --- DESVINCULAR SERVICIO ---
     @DeleteMapping("/{id}/servicios/{idServicio}")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> desvincularServicio(@PathVariable Integer id, @PathVariable Integer idServicio) {
         serviciosService.desvincularServicio(id, idServicio, getPropietarioId());
         return ResponseEntity.ok("Servicio desvinculado del salón.");
@@ -119,7 +119,7 @@ public class SalonController {
 
     // --- AGREGAR RECURSO INDIVIDUAL AL INVENTARIO ---
     @PostMapping("/{id}/inventario")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> agregarRecurso(
             @PathVariable Integer id, 
             @RequestParam Integer idCategoria, 
@@ -129,7 +129,7 @@ public class SalonController {
     }
 
     @PostMapping("/{id}/categorias")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> crearCategoria(
             @PathVariable Integer id, 
             @RequestParam String nombre, 

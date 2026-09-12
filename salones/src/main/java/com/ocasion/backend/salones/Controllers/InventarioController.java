@@ -18,14 +18,14 @@ public class InventarioController {
     // --- RUTAS DE CATEGORÍAS ---
     
     @PutMapping("/categorias/{id}")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> editarCategoria(@PathVariable Integer id, @RequestParam String nombre, @RequestParam String descripcion) {
         inventarioService.actualizarCategoria(id, nombre, descripcion);
         return ResponseEntity.ok("Categoría actualizada.");
     }
 
     @DeleteMapping("/categorias/{id}")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> eliminarCategoria(@PathVariable Integer id) {
         inventarioService.eliminarCategoria(id);
         return ResponseEntity.ok("Categoría eliminada correctamente.");
@@ -34,14 +34,14 @@ public class InventarioController {
     // --- RUTAS DE INVENTARIO (RECURSOS) ---
 
     @PutMapping("/inventario/{id}")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> actualizarRecurso(@PathVariable Integer id, @RequestParam String nombre, @RequestParam Integer cantidad) {
         inventarioService.actualizarRecurso(id, nombre, cantidad);
         return ResponseEntity.ok("Recurso actualizado.");
     }
 
     @DeleteMapping("/inventario/{id}")
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> eliminarRecurso(@PathVariable Integer id) {
         inventarioService.eliminarRecurso(id);
         return ResponseEntity.ok("Recurso eliminado del inventario.");
