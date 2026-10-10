@@ -24,6 +24,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/salones")
+@PreAuthorize("hasRole('PROPIETARIO')")
 public class SalonController {
 
     private final SalonService salonService;
@@ -136,5 +137,13 @@ public class SalonController {
             @RequestParam(required = false) String descripcion) {
         inventarioService.crearCategoriaIndividual(id, nombre, descripcion, getPropietarioId());
         return ResponseEntity.status(HttpStatus.CREATED).body("Categoría creada exitosamente.");
+    }
+    @PatchMapping("/{idSalon}/solicitar-validacion")
+    public ResponseEntity<String> solicitarValidacion(@PathVariable Integer idSalon) {
+        Integer idPropietarioAutenticado = 28; 
+        
+        salonService.solicitarValidacion(idSalon, idPropietarioAutenticado);
+        
+        return ResponseEntity.ok("El salón ha sido enviado a revisión exitosamente.");
     }
 }
