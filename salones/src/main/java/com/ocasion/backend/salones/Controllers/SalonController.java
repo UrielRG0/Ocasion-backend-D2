@@ -24,7 +24,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/salones")
-@PreAuthorize("hasRole('PROPIETARIO')")
+@PreAuthorize("hasRole('Vendedor')")
 public class SalonController {
 
     private final SalonService salonService;
