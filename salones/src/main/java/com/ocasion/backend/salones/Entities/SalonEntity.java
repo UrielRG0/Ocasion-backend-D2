@@ -1,13 +1,17 @@
 package com.ocasion.backend.salones.Entities;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -52,8 +56,13 @@ public class SalonEntity {
     @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<SalonServiciosEntity> serviciosAsignados;
-
+    @CreationTimestamp 
+    @Column(name = "fecha_solicitud", updatable = false)
+    private LocalDateTime fechaSolicitud;
     @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<InventarioSalonEntity> inventario;
+    @OneToOne(mappedBy = "salon",cascade = CascadeType.ALL,fetch = FetchType.LAZY,orphanRemoval = true )
+    @JsonManagedReference 
+    private DocumentosValidacionSalonEntity documentosValidacionSalonEntity;
 }

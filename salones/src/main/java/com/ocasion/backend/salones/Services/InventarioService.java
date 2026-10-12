@@ -23,8 +23,6 @@ public class InventarioService {
         this.salonService = salonService;
     }
 
-    // --- CATEGORÍAS ---
-
     @Transactional
     public void actualizarCategoria(Integer idCategoria, String nuevoNombre, String nuevaDescripcion) {
         CategoriaRecursoEntity categoria = categoriaRepository.findById(idCategoria)
