@@ -88,7 +88,7 @@ public class SalonController {
     // --- FASE 2.A: Asignación de Servicios ---
     @PostMapping("/{id}/servicios")
     @PreAuthorize("hasRole('Vendedor')")
-    public ResponseEntity<String> asignarServicios(@PathVariable Integer id, @Valid @RequestBody List<ServicioAsignadoDTO> dto) {
+    public ResponseEntity<String> asignarServicios(@PathVariable Integer id, @RequestBody List<ServicioAsignadoDTO> dto) {
         salonService.asignarServicios(id, dto, getPropietarioId());
         return ResponseEntity.status(HttpStatus.CREATED).body("Servicios asignados correctamente.");
     }

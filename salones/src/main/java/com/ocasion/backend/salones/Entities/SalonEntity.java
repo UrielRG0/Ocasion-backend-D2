@@ -50,8 +50,10 @@ public class SalonEntity {
     private List<DisponibilidadEntity> disponibilidades;
 
     @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<SalonServiciosEntity> serviciosAsignados;
 
     @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<InventarioSalonEntity> inventario;
 }

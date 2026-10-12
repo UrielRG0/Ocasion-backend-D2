@@ -1,5 +1,7 @@
 package com.ocasion.backend.salones.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +23,9 @@ public class CategoriaRecursoEntity {
     @Column(name="Descripcion")
     private String descripcion;
 
+    // Ignorado en el JSON: si un día se serializa junto con InventarioSalonEntity.categoria,
+    // provocaría el mismo ciclo infinito que ya tuvimos con Salon <-> Inventario.
     @OneToMany(mappedBy = "categoria")
+    @JsonIgnore
     private List<InventarioSalonEntity> insumos;
 }

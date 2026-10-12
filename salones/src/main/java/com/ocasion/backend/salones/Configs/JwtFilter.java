@@ -26,7 +26,14 @@ public class JwtFilter extends OncePerRequestFilter {
     private String secretKey;
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        byte[] keyBytes;
+        try {
+            // Intenta leerlo como Base64 (como lo configuró tu compañero)
+            keyBytes = Decoders.BASE64.decode(secretKey);
+        } catch (Exception e) {
+            // Atrapa cualquier error de decodificación y lo lee como texto plano
+            keyBytes = secretKey.getBytes();
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 

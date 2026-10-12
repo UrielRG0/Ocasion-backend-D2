@@ -1,5 +1,7 @@
 package com.ocasion.backend.salones.Entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,6 +24,7 @@ public class InventarioSalonEntity {
 
     @ManyToOne
     @JoinColumn(name = "Salonid_salon", nullable = false)
+    @JsonBackReference
     private SalonEntity salon;
 
     @ManyToOne
