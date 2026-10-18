@@ -1,5 +1,8 @@
 package com.ocasion.backend.salones.Services;
 
+import com.ocasion.backend.salones.DTO.ServicioCatalogoDTO;
+import java.util.List;
+import org.springframework.data.domain.Sort;
 import com.ocasion.backend.salones.Entities.SalonServiciosEntity;
 import com.ocasion.backend.salones.Entities.SalonServiciosId;
 import com.ocasion.backend.salones.Entities.ServiciosEntity;
@@ -32,6 +35,13 @@ public class ServiciosService {
         servicio.setNombreServicio(nombre);
         servicio.setDescripcion(descripcion);
         return serviciosRepository.save(servicio);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ServicioCatalogoDTO> listarCatalogo() {
+        return serviciosRepository.findAll(Sort.by("nombreServicio"))
+            .stream().map(s -> new ServicioCatalogoDTO(
+                s.getIdServicio(), s.getNombreServicio(), s.getDescripcion())).toList();
     }
 
     @Transactional

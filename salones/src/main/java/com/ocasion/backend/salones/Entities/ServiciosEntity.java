@@ -1,6 +1,7 @@
 package com.ocasion.backend.salones.Entities;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.List;
@@ -22,5 +23,6 @@ public class ServiciosEntity {
     private String descripcion;
 
     @OneToMany(mappedBy = "servicio", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<SalonServiciosEntity> salonesAsignados;
 }

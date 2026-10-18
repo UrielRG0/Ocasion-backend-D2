@@ -31,6 +31,9 @@ public class SecurityConfig {
             
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                    "/api/v1/salones/explorar", "/api/v1/salones/*/detalle",
+                    "/api/v1/salones/*/calendario", "/api/v1/servicios").permitAll()
                 .requestMatchers("/api/salones/publicos/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

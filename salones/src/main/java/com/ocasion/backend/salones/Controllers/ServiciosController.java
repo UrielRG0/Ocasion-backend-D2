@@ -1,5 +1,7 @@
 package com.ocasion.backend.salones.Controllers;
 
+import com.ocasion.backend.salones.DTO.ServicioCatalogoDTO;
+import java.util.List;
 import com.ocasion.backend.salones.Entities.ServiciosEntity;
 import com.ocasion.backend.salones.Services.ServiciosService;
 import org.springframework.http.HttpStatus;
@@ -22,5 +24,10 @@ public class ServiciosController {
     public ResponseEntity<ServiciosEntity> crearServicioPersonalizado(@RequestParam String nombre, @RequestParam String descripcion) {
         ServiciosEntity nuevoServicio = serviciosService.crearServicioPersonalizado(nombre, descripcion);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoServicio);
+    }
+
+    @GetMapping
+    public List<ServicioCatalogoDTO> listarCatalogo() {
+        return serviciosService.listarCatalogo();
     }
 }

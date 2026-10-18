@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class ClienteSalonServiceImpl implements ClienteSalonService {
 
     @Autowired
@@ -43,7 +44,7 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
                 dto.setPrecio_hora(salon.getPrecio_hora().doubleValue());
             }
             
-            dto.setImagen_portada(salon.getImagen());
+            dto.setImagen_portada(fotos(salon).stream().findFirst().orElse(null));
             
             if (salon.getUbicacion() != null) {
                 dto.setCiudad(salon.getUbicacion().getCiudad());
@@ -65,13 +66,13 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
 
     @Override
     public SalonDetalleClienteDTO obtenerDetalle(Integer id) {
-        SalonEntity salon = salonRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Salón no encontrado"));
+        SalonEntity salon = salonPublicado(id);
 
         SalonDetalleClienteDTO dto = new SalonDetalleClienteDTO();
         dto.setId_salon(salon.getId_salon());
         dto.setNombreSalon(salon.getNombreSalon());
         dto.setDescripcion(salon.getDescripcion());
+        dto.setGaleriaFotos(fotos(salon));
         dto.setCapacidadPersonas(salon.getCapacidadPersonas());
         
         // CORRECCIÓN: Usando getPrecio_hora()
@@ -103,6 +104,11 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
 
     @Override
     public List<DisponibilidadMesDTO> obtenerDisponibilidadMensual(Integer id, int mes, int anio) {
+        if (mes < 1 || mes > 12 || anio < 1900 || anio > 9999) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST, "Mes o año inválido");
+        }
+        salonPublicado(id);
         YearMonth anioMes = YearMonth.of(anio, mes);
         LocalDate inicioMes = anioMes.atDay(1);
         LocalDate finMes = anioMes.atEndOfMonth();
@@ -119,5 +125,17 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
             dto.setTipo_bloqueo(d.getObservaciones()); 
             return dto;
         }).collect(Collectors.toList());
+    }
+
+    private SalonEntity salonPublicado(Integer id) {
+        return salonRepository.findById(id).filter(s -> "PUBLICADO".equals(s.getEstado()))
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.NOT_FOUND, "Salón no disponible"));
+    }
+
+    private List<String> fotos(SalonEntity salon) {
+        if (salon.getImagen() == null || salon.getImagen().isBlank()) return List.of();
+        return java.util.Arrays.stream(salon.getImagen().split(","))
+            .map(String::trim).filter(s -> !s.isEmpty()).distinct().limit(5).toList();
     }
 }

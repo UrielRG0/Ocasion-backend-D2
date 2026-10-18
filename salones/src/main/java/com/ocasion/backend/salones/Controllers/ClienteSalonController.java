@@ -36,11 +36,16 @@ public class ClienteSalonController {
                 return ResponseEntity.badRequest().build(); 
             }
         }
-        if (filtros.getPrecioHoraMax() != null && filtros.getPrecioHoraMax() < 0) {
+        if (page < 0 || size < 1 || size > 100
+            || (filtros.getCapacidadMin() != null && filtros.getCapacidadMin() < 0)
+            || (filtros.getCapacidadMax() != null && filtros.getCapacidadMax() < 0)
+            || (filtros.getServiciosIds() != null && filtros.getServiciosIds().stream().anyMatch(id -> id == null || id <= 0))
+            || (filtros.getPrecioHoraMax() != null && (!Double.isFinite(filtros.getPrecioHoraMax()) || filtros.getPrecioHoraMax() < 0))) {
             return ResponseEntity.badRequest().build(); 
         }
 
-        Page<SalonCardResponseDTO> resultados = clienteSalonService.buscarSalones(filtros, PageRequest.of(page, size));
+        Page<SalonCardResponseDTO> resultados = clienteSalonService.buscarSalones(filtros,
+            PageRequest.of(page, size));
         return ResponseEntity.ok(resultados);
     }
 

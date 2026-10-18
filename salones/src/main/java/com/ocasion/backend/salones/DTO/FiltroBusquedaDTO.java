@@ -9,5 +9,6 @@ public class FiltroBusquedaDTO {
     private Integer capacidadMax;
     private Double precioHoraMax;
     private String ciudad;
+    private String texto;
     private List<Integer> serviciosIds;
 }
