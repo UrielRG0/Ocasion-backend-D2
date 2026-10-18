@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/admin/salones")
-@PreAuthorize("hasRole('ADMIN')") // Protege estrictamente toda la clase
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminSalonController {
 
     private final AdminValidacionService adminValidacionService;
