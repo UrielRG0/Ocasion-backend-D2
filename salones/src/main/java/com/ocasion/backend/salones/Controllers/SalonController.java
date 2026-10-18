@@ -141,9 +141,7 @@ public class SalonController {
     @PatchMapping("/{idSalon}/solicitar-validacion")
     public ResponseEntity<String> solicitarValidacion(@PathVariable Integer idSalon) {
         Integer idPropietarioAutenticado = 28; 
-        
         salonService.solicitarValidacion(idSalon, idPropietarioAutenticado);
-        
         return ResponseEntity.ok("El salón ha sido enviado a revisión exitosamente.");
     }
 }

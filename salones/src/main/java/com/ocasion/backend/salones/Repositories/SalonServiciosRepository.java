@@ -9,8 +9,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SalonServiciosRepository extends JpaRepository<SalonServiciosEntity, SalonServiciosId> {
-    
-    // Consulta para verificar el límite de servicios asignados (list.size() <= 10)
     @Query("SELECT COUNT(ss) FROM SalonServiciosEntity ss WHERE ss.salon.id_salon = :salonId")
     long countBySalonId(@Param("salonId") Integer salonId);
 }
