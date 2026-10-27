@@ -12,4 +12,6 @@ public class DocumentosUrlsDTO {
     private String urlVistoBueno;
     private String urlFotosEstablecimiento;
     private String urlFotosPropietario;
+    private java.util.List<String> urlsFotosEstablecimiento;
+    private java.util.List<String> urlsFotosPropietario;
 }

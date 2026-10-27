@@ -41,6 +41,7 @@ public class AdminValidacionService {
             return dto;
         });
     }
+    @Transactional
     public ExpedienteAdminDTO obtenerExpediente(Integer idSalon){
         SalonEntity salon = salonRepository.findById(idSalon)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el salón!"));
@@ -56,13 +57,14 @@ public class AdminValidacionService {
         expediente.setPrecioPorHora(salon.getPrecio_hora());
         expediente.setCapacidadPersonas(salon.getCapacidadPersonas());
         expediente.setEstado(salon.getEstado());
+        if (salon.getUbicacion() != null) expediente.setDireccion(salon.getUbicacion().getDireccion());
         
         DocumentosValidacionSalonEntity docsEntity = salon.getDocumentosValidacionSalonEntity();
         
         if(docsEntity != null){
             DocumentosUrlsDTO documentosDTO = new DocumentosUrlsDTO();
 
-            String baseUrl = "http://localhost:8080/api/v1/admin/salones/" + idSalon + "/archivo/";
+            String baseUrl = "/api/v1/admin/salones/" + idSalon + "/archivo/";
 
             if (docsEntity.getInePropietarioPasaporte() != null && docsEntity.getInePropietarioPasaporte().length > 0) {
                 documentosDTO.setUrlInePasaporte(baseUrl + "ine");
@@ -83,6 +85,10 @@ public class AdminValidacionService {
                 documentosDTO.setUrlFotosPropietario(baseUrl + "foto-propietario");
             }
             
+            documentosDTO.setUrlsFotosEstablecimiento(urlsFotos(docsEntity, baseUrl, "foto-establecimiento",
+                documentosDTO.getUrlFotosEstablecimiento()));
+            documentosDTO.setUrlsFotosPropietario(urlsFotos(docsEntity, baseUrl, "foto-propietario",
+                documentosDTO.getUrlFotosPropietario()));
             expediente.setDocumentos(documentosDTO);
         }
         
@@ -90,8 +96,15 @@ public class AdminValidacionService {
     }
     @Transactional
     public void procesarVeredicto(Integer idSalon, VeredictoAdminDTO dto) {
-        SalonEntity salon = salonRepository.findById(idSalon)
+        SalonEntity salon = salonRepository.findByIdForUpdate(idSalon)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el salón!"));
+
+        if (!"PENDIENTE_VALIDACION".equals(salon.getEstado())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El salón no requiere revisión");
+        }
+        if (dto.getVeredicto() == null || (dto.getObservaciones() != null && dto.getObservaciones().length() > 255)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Veredicto obligatorio y observaciones de máximo 255 caracteres");
+        }
 
         DocumentosValidacionSalonEntity documentos = salon.getDocumentosValidacionSalonEntity();
         if (documentos == null) {
@@ -99,6 +112,7 @@ public class AdminValidacionService {
         }
 
         if (dto.getVeredicto() == VeredictoAdminDTO.Veredicto.APROBADO) {
+            DocumentacionSalonService.comprobarExpediente(documentos);
             documentos.setEstadoRevisionAdmin("APROBADO");
             documentos.setObservacionesAdmin(null); 
             salon.setEstado("PUBLICADO"); 
@@ -114,5 +128,15 @@ public class AdminValidacionService {
         }
 
         salonRepository.save(salon);
+    }
+
+    private java.util.List<String> urlsFotos(DocumentosValidacionSalonEntity docs, String baseUrl,
+            String tipo, String primera) {
+        java.util.List<String> urls = new java.util.ArrayList<>();
+        if (primera != null) urls.add(primera);
+        docs.getFotosAdicionales().stream().filter(f -> tipo.equals(f.getTipo()))
+            .sorted(java.util.Comparator.comparingInt(com.ocasion.backend.salones.Entities.FotoExpedienteEntity::getPosicion))
+            .forEach(f -> urls.add(baseUrl + tipo + "/" + f.getPosicion()));
+        return urls;
     }
 }
