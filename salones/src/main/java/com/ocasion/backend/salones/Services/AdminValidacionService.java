@@ -1,18 +1,21 @@
 package com.ocasion.backend.salones.Services;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ocasion.backend.salones.Repositories.SalonRepository;
 import com.ocasion.backend.salones.DTO.DocumentosUrlsDTO;
 import com.ocasion.backend.salones.DTO.ExpedienteAdminDTO;
 import com.ocasion.backend.salones.DTO.SalonPendienteAdminDTO;
 import com.ocasion.backend.salones.DTO.VeredictoAdminDTO;
 import com.ocasion.backend.salones.Entities.DocumentosValidacionSalonEntity;
 import com.ocasion.backend.salones.Entities.SalonEntity;
-import com.ocasion.backend.salones.Repositories.SalonRepository;
+
 
 import jakarta.transaction.Transactional;
 
@@ -56,7 +59,15 @@ public class AdminValidacionService {
         expediente.setPrecioPorHora(salon.getPrecio_hora());
         expediente.setCapacidadPersonas(salon.getCapacidadPersonas());
         expediente.setEstado(salon.getEstado());
-        
+                if (salon.getServiciosAsignados() != null) {
+
+            List<String> servicios = salon.getServiciosAsignados()
+                    .stream()
+                    .map(relacion -> relacion.getServicio().getNombreServicio())
+                    .toList();
+
+            expediente.setServicios(servicios);
+        }
         DocumentosValidacionSalonEntity docsEntity = salon.getDocumentosValidacionSalonEntity();
         
         if(docsEntity != null){

@@ -1,13 +1,15 @@
 package com.ocasion.backend.salones.DTO;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter 
-@Setter 
+@Getter
+@Setter
 public class ExpedienteAdminDTO {
+
     private Integer id_Salon;
     private String nombreSalon;
     private String descripcion;
@@ -15,5 +17,9 @@ public class ExpedienteAdminDTO {
     private Integer capacidadPersonas;
     private String direccion;
     private String estado;
+
+    // NUEVO
+    private List<String> servicios;
+
     private DocumentosUrlsDTO documentos;
 }
