@@ -223,11 +223,23 @@ public class SalonService {
     
     @Transactional
     public void solicitarValidacion(Integer idSalon, Integer idPropietario) {
-        SalonEntity salon = obtenerSalonValidado(idSalon, idPropietario);
+        SalonEntity salon = salonRepository.findByIdForUpdate(idSalon)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Salón no encontrado"));
+        if (!salon.getUsuariosIdUser().equals(idPropietario)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para modificar este salón");
+        }
         String estadoActual = salon.getEstado();
         if (!"BORRADOR".equalsIgnoreCase(estadoActual) && !"RECHAZADO".equalsIgnoreCase(estadoActual)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Solo los salones en BORRADOR o RECHAZADO pueden enviarse a validación.");
         }
+        if (salon.getUbicacion() == null || salonServiciosRepository.countBySalonId(idSalon) == 0
+                || inventarioSalonRepository.countCategoriasBySalonId(idSalon) == 0) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                "Debe registrar ubicación, al menos un servicio y una categoría con recursos antes de solicitar la revisión");
+        }
+        DocumentacionSalonService.comprobarExpediente(salon.getDocumentosValidacionSalonEntity());
+        salon.getDocumentosValidacionSalonEntity().setEstadoRevisionAdmin("PENDIENTE");
+        salon.getDocumentosValidacionSalonEntity().setObservacionesAdmin(null);
         salon.setEstado("PENDIENTE_VALIDACION");
         salonRepository.save(salon);
     }

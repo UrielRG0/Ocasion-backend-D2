@@ -28,7 +28,7 @@ class ClienteSalonSpecificationTest {
             .setProperty("hibernate.show_sql", "false");
         for (Class<?> entity : List.of(SalonEntity.class, UbicacionEntity.class, ServiciosEntity.class,
             SalonServiciosEntity.class, DisponibilidadEntity.class, DocumentosValidacionSalonEntity.class,
-            InventarioSalonEntity.class, CategoriaRecursoEntity.class)) config.addAnnotatedClass(entity);
+            InventarioSalonEntity.class, CategoriaRecursoEntity.class, FotoExpedienteEntity.class)) config.addAnnotatedClass(entity);
         factory = config.buildSessionFactory();
     }
 
