@@ -35,6 +35,7 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
         return salones.map(salon -> {
             SalonCardResponseDTO dto = new SalonCardResponseDTO();
             dto.setId_salon(salon.getId_salon());
+        dto.setVerificado(salon.isVerificado());
             
             dto.setNombreSalon(salon.getNombreSalon()); 
             dto.setCapacidadPersonas(salon.getCapacidadPersonas());
@@ -70,6 +71,7 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
 
         SalonDetalleClienteDTO dto = new SalonDetalleClienteDTO();
         dto.setId_salon(salon.getId_salon());
+        dto.setVerificado(salon.isVerificado());
         dto.setNombreSalon(salon.getNombreSalon());
         dto.setDescripcion(salon.getDescripcion());
         dto.setGaleriaFotos(fotos(salon));

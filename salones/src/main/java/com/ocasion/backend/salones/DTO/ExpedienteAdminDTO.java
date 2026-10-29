@@ -17,6 +17,7 @@ public class ExpedienteAdminDTO {
     private Integer capacidadPersonas;
     private String direccion;
     private String estado;
+    private String estadoRevisionAdmin;
 
     // NUEVO
     private List<String> servicios;

@@ -25,6 +25,11 @@ import lombok.Setter;
 @Entity
 @Table(name="Salon")
 public class SalonEntity {
+    @jakarta.persistence.Transient
+    public boolean isVerificado() {
+        return documentosValidacionSalonEntity != null
+            && "APROBADO".equals(documentosValidacionSalonEntity.getEstadoRevisionAdmin());
+    }
     public SalonEntity(){};
     
     @Id 

@@ -10,6 +10,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,13 +33,14 @@ class DocumentosSecurityTest {
         mvc.perform(get(url)).andExpect(status().isForbidden());
         mvc.perform(get(url).with(user("9").roles("Cliente"))).andExpect(status().isForbidden());
         mvc.perform(get(url).with(user("9").roles("Vendedor"))).andExpect(status().isForbidden());
+        mvc.perform(get(url).with(user("1").roles("ADMIN"))).andExpect(status().isForbidden());
         verifyNoInteractions(documentos);
     }
 
     @Test void adminRecibeBinarioConTipoCorrectoYSinCache() throws Exception {
         byte[] pdf = "%PDF-1.7\ntest".getBytes();
         when(documentos.archivo(7,"propiedad",0)).thenReturn(pdf);
-        mvc.perform(get("/api/v1/admin/salones/7/archivo/propiedad").with(user("1").roles("ADMIN")))
+        mvc.perform(get("/api/v1/admin/salones/7/archivo/propiedad").with(user("1").roles("Admin")))
             .andExpect(status().isOk()).andExpect(content().bytes(pdf))
             .andExpect(content().contentType("application/pdf"))
             .andExpect(header().string("Cache-Control", "no-store"));
@@ -53,7 +59,6 @@ class DocumentosSecurityTest {
             .claim("roles",java.util.List.of("ROLE_Vendedor"))
             .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(io.jsonwebtoken.io.Decoders.BASE64.decode(
                 "dGVzdC1zZWNyZXQtb25seS1mb3ItYXV0b21hdGVkLXRlc3RzLTEyMzQ1Njc4OTA="))).compact();
-        // Usar una petición nueva para no conservar el usuario de prueba de la anterior.
         var autenticada = multipart("/api/v1/salones/7/documentos");
         for (String parte : java.util.List.of("ine","propiedad","comprobante","vobo",
                 "fotosEstablecimiento","fotosPropietario","fotosPropietario","fotosPropietario")) {
@@ -62,5 +67,25 @@ class DocumentosSecurityTest {
         mvc.perform(autenticada.header("Authorization","Bearer " + jwt))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.id_salon").value(7));
         verify(documentos).guardar(eq(7),eq(9),any(),any(),any(),any(),argThat(f -> f.size() == 1),argThat(f -> f.size() == 3));
+    }
+
+    @Test void devuelveCodigoYMensajeRealAlRechazarDocumentos() throws Exception {
+        for (int codigo : java.util.List.of(403, 409, 413, 415, 422)) {
+            when(documentos.guardar(eq(7),eq(9),any(),any(),any(),any(),anyList(),anyList()))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.valueOf(codigo), "Motivo de prueba"));
+            var req = multipart("/api/v1/salones/7/documentos");
+            for (String parte : java.util.List.of("ine","propiedad","comprobante","vobo","fotosEstablecimiento","fotosPropietario"))
+                req.file(new org.springframework.mock.web.MockMultipartFile(parte,"foto.png","image/png",new byte[]{1}));
+            mvc.perform(req.with(user("9").roles("Vendedor")))
+                .andExpect(status().is(codigo)).andExpect(jsonPath("$.mensaje").value("Motivo de prueba"));
+            reset(documentos);
+        }
+    }
+
+    @Test void archivoFaltanteDevuelve400ConNombreDelCampo() throws Exception {
+        mvc.perform(multipart("/api/v1/salones/7/documentos").with(user("9").roles("Vendedor")))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje").value("Falta el archivo obligatorio: ine"));
+        verifyNoInteractions(documentos);
     }
 }

@@ -73,4 +73,16 @@ class ClienteSalonContractTest {
         assertEquals(400, controller.explorarSalones(filtros, -1, 20).getStatusCode().value());
         verifyNoInteractions(consulta);
     }
+    @Test void verificacionEsIndependienteDeVisibilidadPublica() {
+        assertFalse(service.obtenerDetalle(42).isVerificado());
+        var docs = new com.ocasion.backend.salones.Entities.DocumentosValidacionSalonEntity();
+        salon.setDocumentosValidacionSalonEntity(docs);
+        for (String estado : List.of("SIN_ENVIAR", "PENDIENTE", "RECHAZADO")) {
+            docs.setEstadoRevisionAdmin(estado);
+            assertFalse(service.obtenerDetalle(42).isVerificado());
+            assertEquals("PUBLICADO", salon.getEstado());
+        }
+        docs.setEstadoRevisionAdmin("APROBADO");
+        assertTrue(service.obtenerDetalle(42).isVerificado());
+    }
 }

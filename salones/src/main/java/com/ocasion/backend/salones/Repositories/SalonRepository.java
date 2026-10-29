@@ -16,6 +16,7 @@ public interface SalonRepository extends JpaRepository<SalonEntity, Integer>, Jp
     // Buscar salones de un propietario específico
     List<SalonEntity> findByUsuariosIdUser(Integer usuariosIdUser);
     Page<SalonEntity> findByEstado(String estado, Pageable pageable);
+    Page<SalonEntity> findByEstadoAndDocumentosValidacionSalonEntity_EstadoRevisionAdmin(String estadoSalon, String estadoRevision, Pageable pageable);
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("select s from SalonEntity s where s.id_salon = :id")
     java.util.Optional<SalonEntity> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") Integer id);

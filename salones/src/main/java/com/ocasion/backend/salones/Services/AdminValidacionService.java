@@ -28,7 +28,7 @@ public class AdminValidacionService {
         this.salonRepository = salonRepository;
     }
     public Page<SalonPendienteAdminDTO> obtenerSalonesPendientes(Pageable pageable) {
-        Page<SalonEntity> paginaSalones = salonRepository.findByEstado("PENDIENTE_VALIDACION", pageable);
+        Page<SalonEntity> paginaSalones = salonRepository.findByEstadoAndDocumentosValidacionSalonEntity_EstadoRevisionAdmin("PUBLICADO", "PENDIENTE", pageable);
 
         return paginaSalones.map(salon -> {
             SalonPendienteAdminDTO dto = new SalonPendienteAdminDTO();
@@ -49,8 +49,8 @@ public class AdminValidacionService {
         SalonEntity salon = salonRepository.findById(idSalon)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el salón!"));
             
-        if(!"PENDIENTE_VALIDACION".equalsIgnoreCase(salon.getEstado())){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se requiere validación");
+        if(!"PUBLICADO".equals(salon.getEstado()) || salon.getDocumentosValidacionSalonEntity() == null || !"PENDIENTE".equals(salon.getDocumentosValidacionSalonEntity().getEstadoRevisionAdmin())){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se requiere validación");
         }
         
         ExpedienteAdminDTO expediente = new ExpedienteAdminDTO();
@@ -60,6 +60,7 @@ public class AdminValidacionService {
         expediente.setPrecioPorHora(salon.getPrecio_hora());
         expediente.setCapacidadPersonas(salon.getCapacidadPersonas());
         expediente.setEstado(salon.getEstado());
+        expediente.setEstadoRevisionAdmin(salon.getDocumentosValidacionSalonEntity().getEstadoRevisionAdmin());
         if (salon.getServiciosAsignados() != null) {
 
             List<String> servicios = salon.getServiciosAsignados()
@@ -111,8 +112,8 @@ public class AdminValidacionService {
         SalonEntity salon = salonRepository.findByIdForUpdate(idSalon)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el salón!"));
 
-        if (!"PENDIENTE_VALIDACION".equals(salon.getEstado())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El salón no requiere revisión");
+        if (!"PUBLICADO".equals(salon.getEstado()) || salon.getDocumentosValidacionSalonEntity() == null || !"PENDIENTE".equals(salon.getDocumentosValidacionSalonEntity().getEstadoRevisionAdmin())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El expediente no requiere revisión");
         }
         if (dto.getVeredicto() == null || (dto.getObservaciones() != null && dto.getObservaciones().length() > 255)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Veredicto obligatorio y observaciones de máximo 255 caracteres");
@@ -127,7 +128,7 @@ public class AdminValidacionService {
             DocumentacionSalonService.comprobarExpediente(documentos);
             documentos.setEstadoRevisionAdmin("APROBADO");
             documentos.setObservacionesAdmin(null); 
-            salon.setEstado("PUBLICADO"); 
+ 
             
         } else if (dto.getVeredicto() == VeredictoAdminDTO.Veredicto.RECHAZADO) {
 
@@ -135,8 +136,8 @@ public class AdminValidacionService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe proporcionar observaciones en caso de rechazo.");
             }
             documentos.setEstadoRevisionAdmin("RECHAZADO");
-            documentos.setObservacionesAdmin(dto.getObservaciones()); // Persistir texto
-            salon.setEstado("RECHAZADO");
+            documentos.setObservacionesAdmin(dto.getObservaciones().trim()); // Persistir texto
+
         }
 
         salonRepository.save(salon);

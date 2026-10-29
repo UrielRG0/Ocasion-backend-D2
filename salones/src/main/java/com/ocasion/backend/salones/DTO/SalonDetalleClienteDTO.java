@@ -6,6 +6,7 @@ import java.util.List;
 @Data
 public class SalonDetalleClienteDTO {
     private Integer id_salon;
+    private boolean verificado;
     private String nombreSalon;
     private String descripcion;
     private Integer capacidadPersonas;

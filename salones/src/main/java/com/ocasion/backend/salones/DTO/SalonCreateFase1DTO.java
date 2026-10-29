@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,11 +17,12 @@ import lombok.Setter;
 public class SalonCreateFase1DTO {
     @NotBlank(message = "El nombre es obligatorio")
     private String nombreSalon;
-    
+    @NotNull 
     @Min(value = 1)
     private Integer capacidadPersonas;
     
     @NotNull
+    @Positive 
     private BigDecimal precio_hora;
     
     private String descripcion;

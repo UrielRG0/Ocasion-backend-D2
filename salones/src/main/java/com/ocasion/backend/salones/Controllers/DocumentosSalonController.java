@@ -30,7 +30,7 @@ public class DocumentosSalonController {
 
     @GetMapping({"/api/v1/admin/salones/{id}/archivo/{tipo}",
                  "/api/v1/admin/salones/{id}/archivo/{tipo}/{indice}"})
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_Admin')")
     public ResponseEntity<byte[]> descargar(@PathVariable Integer id, @PathVariable String tipo,
             @PathVariable(required = false) Integer indice) {
         byte[] archivo = documentos.archivo(id, tipo, indice == null ? 0 : indice);

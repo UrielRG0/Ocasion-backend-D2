@@ -228,9 +228,13 @@ public class SalonService {
         if (!salon.getUsuariosIdUser().equals(idPropietario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para modificar este salón");
         }
-        String estadoActual = salon.getEstado();
-        if (!"BORRADOR".equalsIgnoreCase(estadoActual) && !"RECHAZADO".equalsIgnoreCase(estadoActual)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Solo los salones en BORRADOR o RECHAZADO pueden enviarse a validación.");
+        if (!"PUBLICADO".equals(salon.getEstado())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Primero debe publicar el salón para solicitar verificación");
+        }
+        var expediente = salon.getDocumentosValidacionSalonEntity();
+        if (expediente != null && ("PENDIENTE".equals(expediente.getEstadoRevisionAdmin())
+                || "APROBADO".equals(expediente.getEstadoRevisionAdmin()))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El expediente está en revisión o ya fue aprobado");
         }
         if (salon.getUbicacion() == null || salonServiciosRepository.countBySalonId(idSalon) == 0
                 || inventarioSalonRepository.countCategoriasBySalonId(idSalon) == 0) {
@@ -240,7 +244,6 @@ public class SalonService {
         DocumentacionSalonService.comprobarExpediente(salon.getDocumentosValidacionSalonEntity());
         salon.getDocumentosValidacionSalonEntity().setEstadoRevisionAdmin("PENDIENTE");
         salon.getDocumentosValidacionSalonEntity().setObservacionesAdmin(null);
-        salon.setEstado("PENDIENTE_VALIDACION");
         salonRepository.save(salon);
     }
 }

@@ -139,6 +139,7 @@ public class SalonController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Categoría creada exitosamente.");
     }
     @PatchMapping("/{idSalon}/solicitar-validacion")
+     @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<String> solicitarValidacion(@PathVariable Integer idSalon) {
         Integer idPropietarioAutenticado = getPropietarioId();
         salonService.solicitarValidacion(idSalon, idPropietarioAutenticado);

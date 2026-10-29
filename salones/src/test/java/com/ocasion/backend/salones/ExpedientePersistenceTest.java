@@ -36,7 +36,7 @@ class ExpedientePersistenceTest {
     @BeforeEach void preparar() {
         session = factory.openSession(); session.beginTransaction();
         var salon = new SalonEntity(); salon.setUsuariosIdUser(9); salon.setNombreSalon("Expediente de prueba");
-        salon.setEstado("BORRADOR"); salon.setPrecio_hora(BigDecimal.TEN); session.persist(salon);
+        salon.setEstado("PUBLICADO"); salon.setPrecio_hora(BigDecimal.TEN); session.persist(salon);
         id = salon.getId_salon();
         var repo = mock(SalonRepository.class);
         when(repo.findByIdForUpdate(id)).thenAnswer(i -> Optional.ofNullable(session.find(SalonEntity.class,id)));

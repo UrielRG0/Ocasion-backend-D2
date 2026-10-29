@@ -26,8 +26,12 @@ public class DocumentacionSalonService {
             .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Salón no encontrado"));
         if (!Objects.equals(salon.getUsuariosIdUser(), propietario))
             throw error(HttpStatus.FORBIDDEN, "El salón no pertenece al usuario autenticado");
-        if (!Set.of("BORRADOR", "RECHAZADO").contains(salon.getEstado()))
-            throw error(HttpStatus.CONFLICT, "Solo se pueden cargar documentos en BORRADOR o RECHAZADO");
+        if (!"PUBLICADO".equals(salon.getEstado()))
+            throw error(HttpStatus.CONFLICT, "Primero debe publicar el salón para cargar documentos de verificación");
+        var expedienteActual = salon.getDocumentosValidacionSalonEntity();
+        if (expedienteActual != null && ("PENDIENTE".equals(expedienteActual.getEstadoRevisionAdmin())
+                || "APROBADO".equals(expedienteActual.getEstadoRevisionAdmin())))
+            throw error(HttpStatus.CONFLICT, "El expediente está en revisión o ya fue aprobado");
         if (establecimiento == null || establecimiento.isEmpty() || establecimiento.size() > 10)
             throw error(HttpStatus.BAD_REQUEST, "Debe adjuntar entre 1 y 10 fotos del establecimiento");
         if (propietarioFotos == null || propietarioFotos.size() < 3)
@@ -55,11 +59,14 @@ public class DocumentacionSalonService {
         docs.getFotosAdicionales().clear();
         agregarFotos(docs, "foto-establecimiento", fotosSalon);
         agregarFotos(docs, "foto-propietario", fotosPersona);
-        docs.setEstadoRevisionAdmin("PENDIENTE");
+        docs.setEstadoRevisionAdmin("SIN_ENVIAR");
         docs.setObservacionesAdmin(null);
-        salones.saveAndFlush(salon);
-        return Map.of("id_salon", id, "id_expediente", docs.getIdExpediente(),
-            "estadoRevisionAdmin", "PENDIENTE", "estadoSalon", salon.getEstado(),
+        // merge puede crear una copia gestionada del expediente nuevo.
+        // El ID generado se lee del resultado persistido, no de la referencia original.
+        SalonEntity guardado = salones.saveAndFlush(salon);
+        Integer idExpediente = guardado.getDocumentosValidacionSalonEntity().getIdExpediente();
+        return Map.of("id_salon", id, "id_expediente", idExpediente,
+            "estadoRevisionAdmin", "SIN_ENVIAR", "estadoSalon", salon.getEstado(),
             "fotosEstablecimiento", fotosSalon.size(), "fotosPropietario", fotosPersona.size(),
             "mensaje", "Documentos guardados. Ya puede solicitar la revisión.");
     }
