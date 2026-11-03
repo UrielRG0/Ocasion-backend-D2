@@ -63,6 +63,7 @@ public class SecurityConfig {
                     HttpMethod.GET,
                     "/api/v1/salones/explorar",
                     "/api/v1/salones/*/detalle",
+                    "/api/v1/salones/*/imagenes/*",
                     "/api/v1/salones/*/calendario",
                     "/api/v1/servicios"
                 )
@@ -98,7 +99,9 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(
             Arrays.asList(
                 "http://localhost:4200",
-                "http://172.30.120.90:4200"
+                "http://172.30.120.90:4200",
+                "http://localhost:4300",
+                "http://172.30.219.232:8082"
             )
         );
 

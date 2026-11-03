@@ -48,11 +48,26 @@ public class SalonController {
         return Integer.parseInt(SecurityContextHolder.getContext().getAuthentication().getName());
     }
 
-    @PostMapping("/fase1")
+    @PostMapping(value="/fase1", consumes="application/json")
     @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<Map<String, Object>> crearFase1(@Valid @RequestBody SalonCreateFase1DTO dto) {
         Map<String, Object> response = salonService.crearFase1(dto, getPropietarioId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping(value="/fase1", consumes="multipart/form-data")
+    public ResponseEntity<Map<String, Object>> crearConFotos(
+            @Valid @RequestPart("salon") SalonCreateFase1DTO dto,
+            @RequestPart("imagenes") List<org.springframework.web.multipart.MultipartFile> imagenes) {
+        dto.setImagenes(null);
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(salonService.crearFase1(dto, getPropietarioId(), imagenes));
+    }
+
+    @PutMapping(value="/{id}/imagenes", consumes="multipart/form-data")
+    public List<String> reemplazarImagenes(@PathVariable Integer id,
+            @RequestPart("imagenes") List<org.springframework.web.multipart.MultipartFile> imagenes) {
+        return salonService.reemplazarImagenes(id, getPropietarioId(), imagenes);
     }
 
     @GetMapping("/propietario")

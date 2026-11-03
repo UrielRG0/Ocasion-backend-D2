@@ -41,7 +41,7 @@ public class SalonService {
     private final CategoriaRecursoRepository categoriaRecursoRepository;
     private final InventarioSalonRepository inventarioSalonRepository;
 
-   public SalonService(SalonRepository salonRepository, 
+   public SalonService(SalonRepository salonRepository,
                         SalonServiciosRepository salonServiciosRepository,
                         ServiciosRepository serviciosRepository,
                         CategoriaRecursoRepository categoriaRecursoRepository,
@@ -55,6 +55,13 @@ public class SalonService {
 
     @Transactional
     public Map<String, Object> crearFase1(SalonCreateFase1DTO dto, Integer idPropietario) {
+        return crearFase1(dto, idPropietario, null);
+    }
+
+    @Transactional
+    public Map<String, Object> crearFase1(SalonCreateFase1DTO dto, Integer idPropietario,
+            List<org.springframework.web.multipart.MultipartFile> archivos) {
+        var fotos = archivos == null ? null : ImagenesSalon.leer(archivos);
         SalonEntity salon = new SalonEntity();
         salon.setNombreSalon(dto.getNombreSalon());
         salon.setCapacidadPersonas(dto.getCapacidadPersonas());
@@ -63,9 +70,7 @@ public class SalonService {
         salon.setUsuariosIdUser(idPropietario);
         salon.setEstado("BORRADOR");
 
-        if (dto.getImagenes() != null && !dto.getImagenes().isEmpty()) {
-            salon.setImagen(String.join(",", dto.getImagenes()));
-        }
+        ImagenesSalon.desdeJson(salon, dto.getImagenes());
         UbicacionEntity ubicacion = new UbicacionEntity();
         ubicacion.setDireccion(dto.getUbicacion().getDireccion());
         ubicacion.setLatitud(dto.getUbicacion().getLatitud());
@@ -81,8 +86,9 @@ public class SalonService {
         disp.setFecha(dto.getDisponibilidadInicial().getFecha());
         disp.setObservaciones(dto.getDisponibilidadInicial().getObservaciones());
         disp.setSalon(salon);
-        salon.setDisponibilidades(List.of(disp)); 
+        salon.setDisponibilidades(List.of(disp));
 
+        if (fotos != null) ImagenesSalon.reemplazar(salon, fotos);
         salonRepository.save(salon);
 
         Map<String, Object> response = new HashMap<>();
@@ -104,11 +110,11 @@ public class SalonService {
     @Transactional
     public void asignarServicios(Integer idSalon, List<ServicioAsignadoDTO> servicios, Integer idPropietario) {
         SalonEntity salon = obtenerSalonValidado(idSalon, idPropietario);
-        
+
         if (servicios.size() > 10) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No puedes asignar más de 10 servicios.");
         }
-        
+
         long countActual = salonServiciosRepository.countBySalonId(idSalon);
         if (countActual + servicios.size() > 10) {
              throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El salón excedería el límite de 10 servicios.");
@@ -117,13 +123,13 @@ public class SalonService {
         for (ServicioAsignadoDTO dto : servicios) {
             ServiciosEntity servicio = serviciosRepository.findById(dto.getId_servicio())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Servicio no encontrado"));
-            
+
             SalonServiciosEntity relacion = new SalonServiciosEntity();
             relacion.setId(new SalonServiciosId(idSalon, servicio.getIdServicio()));
             relacion.setSalon(salon);
             relacion.setServicio(servicio);
             relacion.setNumeroServiciosSolicitados(dto.getNumeroServiciosSolicitados());
-            
+
             salonServiciosRepository.save(relacion);
         }
     }
@@ -131,7 +137,7 @@ public class SalonService {
     @Transactional
     public void cargarInventarioLote(Integer idSalon, InventarioBatchDTO lote, Integer idPropietario) {
         SalonEntity salon = obtenerSalonValidado(idSalon, idPropietario);
-        
+
         if (lote.getCategorias() == null || lote.getCategorias().isEmpty() || lote.getCategorias().size() > 8) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe enviar entre 1 y 8 categorías.");
         }
@@ -161,20 +167,32 @@ public class SalonService {
     @Transactional
     public void publicarSalon(Integer idSalon, Integer idPropietario) {
         SalonEntity salon = obtenerSalonValidado(idSalon, idPropietario);
-        
+
         if (salon.getUbicacion() == null) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "El salón no puede publicarse: Debe contar con una ubicación.");
         }
-        
+
         long numServicios = salonServiciosRepository.countBySalonId(idSalon);
         long numCategorias = inventarioSalonRepository.countCategoriasBySalonId(idSalon);
-        
+
         if (numServicios == 0 || numCategorias == 0) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "El salón no puede publicarse: Debe registrar al menos un servicio y un insumo en su inventario.");
         }
-        
+
         salon.setEstado("PUBLICADO");
         salonRepository.save(salon);
+    }
+
+    @Transactional
+    public List<String> reemplazarImagenes(Integer idSalon, Integer propietario,
+            List<org.springframework.web.multipart.MultipartFile> archivos) {
+        var salon = salonRepository.findByIdForUpdate(idSalon)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Salón no encontrado"));
+        if (!salon.getUsuariosIdUser().equals(propietario))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar este salón");
+        ImagenesSalon.reemplazar(salon, ImagenesSalon.leer(archivos));
+        salonRepository.saveAndFlush(salon);
+        return ImagenesSalon.urls(salon);
     }
 
     public List<SalonEntity> obtenerSalonesPorPropietario(Integer idPropietario) {
@@ -192,16 +210,14 @@ public class SalonService {
         salon.setCapacidadPersonas(dto.getCapacidadPersonas());
         salon.setPrecio_hora(dto.getPrecio_hora());
         salon.setDescripcion(dto.getDescripcion());
-        if (dto.getImagenes() != null && !dto.getImagenes().isEmpty()) {
-            salon.setImagen(String.join(",", dto.getImagenes()));
-        } 
+        ImagenesSalon.desdeJson(salon, dto.getImagenes());
         UbicacionEntity ubicacion = salon.getUbicacion();
         if (ubicacion == null) {
             ubicacion = new UbicacionEntity();
             ubicacion.setSalon(salon);
             salon.setUbicacion(ubicacion);
         }
-        
+
         ubicacion.setDireccion(dto.getUbicacion().getDireccion());
         ubicacion.setLatitud(dto.getUbicacion().getLatitud());
         ubicacion.setLongitud(dto.getUbicacion().getLongitud());
@@ -214,13 +230,13 @@ public class SalonService {
     public void eliminarSalon(Integer idSalon, Integer idPropietario) {
         SalonEntity salon = salonRepository.findById(idSalon)
             .orElseThrow(() -> new RuntimeException("Salón no encontrado"));
-        
+
         if (!salon.getUsuariosIdUser().equals(idPropietario)) {
             throw new RuntimeException("No tienes permiso para eliminar este salón");
         }
         salonRepository.delete(salon);
     }
-    
+
     @Transactional
     public void solicitarValidacion(Integer idSalon, Integer idPropietario) {
         SalonEntity salon = salonRepository.findByIdForUpdate(idSalon)

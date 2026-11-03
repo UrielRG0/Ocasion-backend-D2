@@ -46,6 +46,17 @@ public class SalonEntity {
     private BigDecimal precio_hora;
     @Column(name = "Usuariosid_user", nullable = false)
     private Integer usuariosIdUser;
+    @OneToMany(mappedBy="salon", cascade=CascadeType.ALL, orphanRemoval=true)
+    @jakarta.persistence.OrderBy("posicion ASC")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<ImagenSalonEntity> fotosCatalogo = new java.util.ArrayList<>();
+
+    @jakarta.persistence.Transient
+    public List<String> getImagenes() {
+        return com.ocasion.backend.salones.Services.ImagenesSalon.urls(this);
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @Column(name="imagen")
     private String imagen;
     @Column(name="estado",nullable = false)

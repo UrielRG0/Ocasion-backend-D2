@@ -136,8 +136,6 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
     }
 
     private List<String> fotos(SalonEntity salon) {
-        if (salon.getImagen() == null || salon.getImagen().isBlank()) return List.of();
-        return java.util.Arrays.stream(salon.getImagen().split(","))
-            .map(String::trim).filter(s -> !s.isEmpty()).distinct().limit(5).toList();
+        return ImagenesSalon.urls(salon);
     }
 }

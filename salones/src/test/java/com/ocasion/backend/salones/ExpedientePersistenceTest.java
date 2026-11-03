@@ -28,7 +28,7 @@ class ExpedientePersistenceTest {
             .setProperty("hibernate.hbm2ddl.auto", "create-drop");
         for (Class<?> entity : List.of(SalonEntity.class, UbicacionEntity.class, ServiciosEntity.class,
             SalonServiciosEntity.class, DisponibilidadEntity.class, DocumentosValidacionSalonEntity.class,
-            InventarioSalonEntity.class, CategoriaRecursoEntity.class, FotoExpedienteEntity.class))
+            InventarioSalonEntity.class, CategoriaRecursoEntity.class, FotoExpedienteEntity.class, ImagenSalonEntity.class, ContenidoImagenSalonEntity.class))
             config.addAnnotatedClass(entity);
         factory = config.buildSessionFactory();
     }
