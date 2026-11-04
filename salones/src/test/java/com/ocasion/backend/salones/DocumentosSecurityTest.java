@@ -57,6 +57,7 @@ class DocumentosSecurityTest {
         mvc.perform(peticion.with(user("9").roles("Cliente"))).andExpect(status().isForbidden());
         String jwt = io.jsonwebtoken.Jwts.builder().claim("id_usuario",9)
             .claim("roles",java.util.List.of("ROLE_Vendedor"))
+            .setExpiration(new java.util.Date(System.currentTimeMillis() + 60_000))
             .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(io.jsonwebtoken.io.Decoders.BASE64.decode(
                 "dGVzdC1zZWNyZXQtb25seS1mb3ItYXV0b21hdGVkLXRlc3RzLTEyMzQ1Njc4OTA="))).compact();
         var autenticada = multipart("/api/v1/salones/7/documentos");

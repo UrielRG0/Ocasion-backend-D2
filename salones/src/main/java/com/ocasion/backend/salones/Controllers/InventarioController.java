@@ -3,6 +3,7 @@ package com.ocasion.backend.salones.Controllers;
 import com.ocasion.backend.salones.Services.InventarioService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,15 +36,15 @@ public class InventarioController {
 
     @PutMapping("/inventario/{id}")
     @PreAuthorize("hasRole('Vendedor')")
-    public ResponseEntity<String> actualizarRecurso(@PathVariable Integer id, @RequestParam String nombre, @RequestParam Integer cantidad) {
-        inventarioService.actualizarRecurso(id, nombre, cantidad);
+    public ResponseEntity<String> actualizarRecurso(@PathVariable Integer id, @RequestParam String nombre, @RequestParam Integer cantidad, Authentication authentication) {
+        inventarioService.actualizarRecurso(id, nombre, cantidad, Integer.valueOf(authentication.getName()));
         return ResponseEntity.ok("Recurso actualizado.");
     }
 
     @DeleteMapping("/inventario/{id}")
     @PreAuthorize("hasRole('Vendedor')")
-    public ResponseEntity<String> eliminarRecurso(@PathVariable Integer id) {
-        inventarioService.eliminarRecurso(id);
+    public ResponseEntity<String> eliminarRecurso(@PathVariable Integer id, Authentication authentication) {
+        inventarioService.eliminarRecurso(id, Integer.valueOf(authentication.getName()));
         return ResponseEntity.ok("Recurso eliminado del inventario.");
     }
 }

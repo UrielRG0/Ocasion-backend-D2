@@ -67,11 +67,9 @@ public class InventarioService {
     }
 
     @Transactional
-    public void eliminarRecurso(Integer idRecurso) {
-        if (!inventarioRepository.existsById(idRecurso)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Recurso no encontrado.");
-        }
-        inventarioRepository.deleteById(idRecurso);
+    public void eliminarRecurso(Integer idRecurso, Integer idPropietario) {
+        InventarioSalonEntity inventario = obtenerRecursoPropio(idRecurso, idPropietario);
+        inventarioRepository.delete(inventario);
     }
 
     @Transactional
@@ -92,9 +90,8 @@ public class InventarioService {
     }
 
     @Transactional
-    public void actualizarRecurso(Integer idRecurso, String nuevoNombre, Integer nuevaCantidad) {
-        InventarioSalonEntity inventario = inventarioRepository.findById(idRecurso)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recurso no encontrado."));
+    public void actualizarRecurso(Integer idRecurso, String nuevoNombre, Integer nuevaCantidad, Integer idPropietario) {
+        InventarioSalonEntity inventario = obtenerRecursoPropio(idRecurso, idPropietario);
         
         if (nuevaCantidad < 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La cantidad debe ser >= 1.");
@@ -103,5 +100,15 @@ public class InventarioService {
         inventario.setNombreRecurso(nuevoNombre);
         inventario.setCantidadTotal(nuevaCantidad);
         inventarioRepository.save(inventario);
+    }
+
+    private InventarioSalonEntity obtenerRecursoPropio(Integer idRecurso, Integer idPropietario) {
+        InventarioSalonEntity inventario = inventarioRepository.findById(idRecurso)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recurso no encontrado."));
+        if (idPropietario == null || inventario.getSalon() == null
+                || !idPropietario.equals(inventario.getSalon().getUsuariosIdUser())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sin permiso para administrar este recurso.");
+        }
+        return inventario;
     }
 }

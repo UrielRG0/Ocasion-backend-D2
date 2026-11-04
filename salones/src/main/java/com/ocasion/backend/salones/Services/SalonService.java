@@ -143,17 +143,36 @@ public class SalonService {
         }
 
         for (CategoriaBatchDTO catDTO : lote.getCategorias()) {
+            if (catDTO.getNombreCategoria() == null || catDTO.getNombreCategoria().isBlank()
+                    || catDTO.getRecursos() == null || catDTO.getRecursos().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cada categoría requiere un nombre y al menos un recurso.");
+            }
             if (catDTO.getRecursos().size() > 20) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Máximo 20 recursos por categoría.");
             }
 
-            // Persiste o recupera la categoría (simplificado: asume creación directa por el lote)
-            CategoriaRecursoEntity categoria = new CategoriaRecursoEntity();
-            categoria.setNombreCategoria(catDTO.getNombreCategoria());
-            // Si el nombre es UNIQUE, idealmente buscaríamos primero si existe, si no, lo guardamos.
-            categoria = categoriaRecursoRepository.save(categoria);
+            // El nombre es único en el catálogo; el inventario pertenece al salón.
+            String nombreCategoria = catDTO.getNombreCategoria().trim();
+            CategoriaRecursoEntity categoria = categoriaRecursoRepository
+                .findFirstByNombreCategoriaIgnoreCase(nombreCategoria)
+                .orElseGet(() -> {
+                    CategoriaRecursoEntity nueva = new CategoriaRecursoEntity();
+                    nueva.setNombreCategoria(nombreCategoria);
+                    return categoriaRecursoRepository.save(nueva);
+                });
+            long existentes = inventarioSalonRepository.countBySalonIdAndCategoriaId(idSalon, categoria.getIdCategoria());
+            if (existentes == 0 && inventarioSalonRepository.countCategoriasBySalonId(idSalon) >= 8) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Máximo 8 categorías por salón.");
+            }
+            if (existentes + catDTO.getRecursos().size() > 20) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Máximo 20 recursos por categoría.");
+            }
 
             for (RecursoDTO recDTO : catDTO.getRecursos()) {
+                if (recDTO.getNombre_recurso() == null || recDTO.getNombre_recurso().isBlank()
+                        || recDTO.getCantidad_total() == null || recDTO.getCantidad_total() < 1) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cada recurso requiere nombre y cantidad positiva.");
+                }
                 InventarioSalonEntity inventario = new InventarioSalonEntity();
                 inventario.setNombreRecurso(recDTO.getNombre_recurso());
                 inventario.setCantidadTotal(recDTO.getCantidad_total());

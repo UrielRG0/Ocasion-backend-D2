@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CategoriaRecursoRepository extends JpaRepository<CategoriaRecursoEntity, Integer> {
+    java.util.Optional<CategoriaRecursoEntity> findFirstByNombreCategoriaIgnoreCase(String nombreCategoria);
     
     // Validación para evitar borrado de categorías con stock activo (Error 409 Conflict)
     @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM InventarioSalonEntity i WHERE i.categoria.idCategoria = :categoriaId")

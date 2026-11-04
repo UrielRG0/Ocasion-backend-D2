@@ -52,6 +52,11 @@ public class JwtFilter extends OncePerRequestFilter {
                         .parseClaimsJws(token)
                         .getBody();
 
+                // La firma valida no basta: toda sesion debe tener caducidad.
+                if (claims.getExpiration() == null) {
+                    throw new io.jsonwebtoken.JwtException("El token requiere fecha de expiracion.");
+                }
+
                 String userId = claims.get("id_usuario").toString();
                 List<String> rolesToken = claims.get("roles", List.class);
                 List<SimpleGrantedAuthority> authorities = rolesToken.stream()
