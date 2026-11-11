@@ -27,20 +27,14 @@ public class AdminValidacionService {
     public AdminValidacionService(SalonRepository salonRepository){
         this.salonRepository = salonRepository;
     }
+    @org.springframework.transaction.annotation.Transactional(readOnly=true)
     public Page<SalonPendienteAdminDTO> obtenerSalonesPendientes(Pageable pageable) {
-        Page<SalonEntity> paginaSalones = salonRepository.findByEstadoAndDocumentosValidacionSalonEntity_EstadoRevisionAdmin("PUBLICADO", "PENDIENTE", pageable);
-
-        return paginaSalones.map(salon -> {
-            SalonPendienteAdminDTO dto = new SalonPendienteAdminDTO();
-            dto.setId_salon(salon.getId_salon());
-            dto.setNombreSalon(salon.getNombreSalon());
-                
-            dto.setFechaSolicitud(salon.getFechaSolicitud()); 
-            // (Simulada por ahora si aún no conectas los microservicios):
-            dto.setPropietarioNombre("Propietario ID: " + salon.getUsuariosIdUser());
-            // (Ideal con FeignClient llamando al microservicio de Usuarios):
-            // String nombreUsuario = usuarioFeignClient.obtenerNombrePorId(salon.getUsuariosIdUser());
-            // dto.setPropietarioNombre(nombreUsuario)
+        return salonRepository.findPendientesResumen(pageable).map(salon -> {
+            var dto = new SalonPendienteAdminDTO();
+            dto.setId_salon(salon.getId());
+            dto.setNombreSalon(salon.getNombre());
+            dto.setFechaSolicitud(salon.getFecha());
+            dto.setPropietarioNombre("Propietario ID: " + salon.getPropietario());
             return dto;
         });
     }

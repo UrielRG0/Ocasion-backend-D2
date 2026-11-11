@@ -3,14 +3,12 @@ package com.ocasion.backend.salones.Services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.ocasion.backend.salones.DTO.*;
 import com.ocasion.backend.salones.Entities.*;
 import com.ocasion.backend.salones.Repositories.DisponibilidadRepository;
 import com.ocasion.backend.salones.Repositories.SalonRepository;
-import com.ocasion.backend.salones.Repositories.SalonSpecification;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -25,44 +23,14 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
     private SalonRepository salonRepository;
 
     @Autowired
+    private com.ocasion.backend.salones.Repositories.CatalogoConsulta catalogoConsulta;
+
+    @Autowired
     private DisponibilidadRepository disponibilidadRepository;
 
     @Override
     public Page<SalonCardResponseDTO> buscarSalones(FiltroBusquedaDTO filtros, Pageable pageable) {
-        Specification<SalonEntity> spec = SalonSpecification.aplicarFiltros(filtros);
-        Page<SalonEntity> salones = salonRepository.findAll(spec, pageable);
-
-        return salones.map(salon -> {
-            SalonCardResponseDTO dto = new SalonCardResponseDTO();
-            dto.setId_salon(salon.getId_salon());
-        dto.setVerificado(salon.isVerificado());
-            
-            dto.setNombreSalon(salon.getNombreSalon()); 
-            dto.setCapacidadPersonas(salon.getCapacidadPersonas());
-            
-            // CORRECCIÓN: Usando getPrecio_hora()
-            if (salon.getPrecio_hora() != null) {
-                dto.setPrecio_hora(salon.getPrecio_hora().doubleValue());
-            }
-            
-            dto.setImagen_portada(fotos(salon).stream().findFirst().orElse(null));
-            
-            if (salon.getUbicacion() != null) {
-                dto.setCiudad(salon.getUbicacion().getCiudad());
-                dto.setDireccion(salon.getUbicacion().getDireccion());
-            }
-
-            // CORRECCIÓN: Usando getServiciosAsignados()
-            if (salon.getServiciosAsignados() != null) {
-                List<String> destacados = salon.getServiciosAsignados().stream()
-                        .map(relacion -> relacion.getServicio().getNombreServicio())
-                        .limit(4)
-                        .collect(Collectors.toList());
-                dto.setServiciosDestacados(destacados);
-            }
-
-            return dto;
-        });
+        return catalogoConsulta.buscar(filtros, pageable);
     }
 
     @Override

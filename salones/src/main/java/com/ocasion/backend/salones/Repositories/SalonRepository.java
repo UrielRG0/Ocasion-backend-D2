@@ -13,6 +13,18 @@ import com.ocasion.backend.salones.Entities.SalonEntity;
 
 @Repository
 public interface SalonRepository extends JpaRepository<SalonEntity, Integer>, JpaSpecificationExecutor<SalonEntity> {
+    @org.springframework.data.jpa.repository.Query("select count(s) from SalonEntity s where s.id_salon = :id and s.usuariosIdUser = :propietario")
+    long countPropio(@org.springframework.data.repository.query.Param("id") Integer id,
+        @org.springframework.data.repository.query.Param("propietario") Integer propietario);
+    interface PendienteResumen {
+        Integer getId();
+        String getNombre();
+        Integer getPropietario();
+        java.time.LocalDateTime getFecha();
+    }
+    @org.springframework.data.jpa.repository.Query(value = "select s.id_salon as id, s.nombreSalon as nombre, s.usuariosIdUser as propietario, s.fechaSolicitud as fecha from SalonEntity s join s.documentosValidacionSalonEntity d where s.estado = 'PUBLICADO' and d.estadoRevisionAdmin = 'PENDIENTE'",
+        countQuery = "select count(s) from SalonEntity s join s.documentosValidacionSalonEntity d where s.estado = 'PUBLICADO' and d.estadoRevisionAdmin = 'PENDIENTE'")
+    Page<PendienteResumen> findPendientesResumen(Pageable pageable);
     // Buscar salones de un propietario específico
     List<SalonEntity> findByUsuariosIdUser(Integer usuariosIdUser);
     Page<SalonEntity> findByEstado(String estado, Pageable pageable);

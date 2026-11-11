@@ -72,7 +72,7 @@ public class SalonController {
 
     @GetMapping("/propietario")
     @PreAuthorize("hasRole('Vendedor')")
-    public ResponseEntity<List<SalonEntity>> listarMisSalones() {
+    public ResponseEntity<List<com.ocasion.backend.salones.DTO.SalonPropietarioDTO>> listarMisSalones() {
         return ResponseEntity.ok(salonService.obtenerSalonesPorPropietario(getPropietarioId()));
     }
 

@@ -214,8 +214,18 @@ public class SalonService {
         return ImagenesSalon.urls(salon);
     }
 
-    public List<SalonEntity> obtenerSalonesPorPropietario(Integer idPropietario) {
-        return salonRepository.findByUsuariosIdUser(idPropietario);
+    @Autowired
+    private com.ocasion.backend.salones.Repositories.PropietarioConsulta propietarioConsulta;
+
+    @org.springframework.transaction.annotation.Transactional(readOnly=true)
+    public List<com.ocasion.backend.salones.DTO.SalonPropietarioDTO> obtenerSalonesPorPropietario(Integer idPropietario) {
+        return propietarioConsulta.buscar(idPropietario);
+    }
+
+    public SalonEntity referenciaPropia(Integer idSalon, Integer idPropietario) {
+        if (idPropietario == null || salonRepository.countPropio(idSalon,idPropietario) == 0)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sin permiso.");
+        return salonRepository.getReferenceById(idSalon);
     }
     @Transactional
     public SalonEntity actualizarSalon(Integer idSalon, SalonCreateFase1DTO dto, Integer idPropietario) {

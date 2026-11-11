@@ -44,9 +44,7 @@ public class InventarioService {
 
     @Transactional
     public InventarioSalonEntity agregarRecurso(Integer idSalon, Integer idCategoria, String nombre, Integer cantidad, Integer idPropietario) {
-        SalonEntity salon = salonService.obtenerSalonesPorPropietario(idPropietario).stream()
-            .filter(s -> s.getId_salon().equals(idSalon)).findFirst()
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Sin permiso."));
+        SalonEntity salon = salonService.referenciaPropia(idSalon, idPropietario);
 
         if (cantidad < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La cantidad debe ser >= 1.");
 
@@ -74,9 +72,7 @@ public class InventarioService {
 
     @Transactional
     public CategoriaRecursoEntity crearCategoriaIndividual(Integer idSalon, String nombre, String descripcion, Integer idPropietario) {
-        SalonEntity salon = salonService.obtenerSalonesPorPropietario(idPropietario).stream()
-            .filter(s -> s.getId_salon().equals(idSalon)).findFirst()
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Sin permiso."));
+        SalonEntity salon = salonService.referenciaPropia(idSalon, idPropietario);
 
         long totalCategorias = inventarioRepository.countCategoriasBySalonId(idSalon);
         if (totalCategorias >= 8) {

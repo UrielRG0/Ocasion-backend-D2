@@ -47,10 +47,7 @@ public class ServiciosService {
     @Transactional
     public void desvincularServicio(Integer idSalon, Integer idServicio, Integer idPropietario) {
         // Validar propiedad del salón antes de desvincular
-        salonService.obtenerSalonesPorPropietario(idPropietario).stream()
-            .filter(s -> s.getId_salon().equals(idSalon))
-            .findFirst()
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para modificar este salón."));
+        salonService.referenciaPropia(idSalon, idPropietario);
 
         SalonServiciosId relacionId = new SalonServiciosId(idSalon, idServicio);
         if (!salonServiciosRepository.existsById(relacionId)) {
