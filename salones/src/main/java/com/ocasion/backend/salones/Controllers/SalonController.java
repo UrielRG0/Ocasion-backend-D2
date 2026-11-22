@@ -97,8 +97,25 @@ public class SalonController {
 
     @GetMapping("/{id}/disponibilidad")
     public ResponseEntity<List<DisponibilidadEntity>> consultarBloqueos(@PathVariable Integer id) {
-        // Este método puede ser público o requerir rol CLIENTE/PROPIETARIO según tus reglas de negocio
-        return ResponseEntity.ok(disponibilidadService.consultarBloqueos(id));
+        return ResponseEntity.ok(disponibilidadService.consultarBloqueos(id, getPropietarioId()));
+    }
+
+    @GetMapping("/{id}/horario")
+    public ResponseEntity<com.ocasion.backend.salones.DTO.HorarioSalonDTO> consultarHorario(@PathVariable Integer id) {
+        var horario = disponibilidadService.consultarHorario(id, getPropietarioId());
+        return horario == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(horario);
+    }
+
+    @PutMapping("/{id}/horario")
+    public ResponseEntity<com.ocasion.backend.salones.DTO.HorarioSalonDTO> actualizarHorario(@PathVariable Integer id,
+        @Valid @RequestBody com.ocasion.backend.salones.DTO.ActualizarHorarioDTO dto) {
+        return ResponseEntity.ok(disponibilidadService.actualizarHorario(id, dto, getPropietarioId()));
+    }
+
+    @DeleteMapping("/{id}/disponibilidad/{bloqueo}")
+    public ResponseEntity<Void> eliminarBloqueo(@PathVariable Integer id, @PathVariable Integer bloqueo) {
+        disponibilidadService.eliminarBloqueo(id, bloqueo, getPropietarioId());
+        return ResponseEntity.noContent().build();
     }
 
     // --- FASE 2.A: Asignación de Servicios ---

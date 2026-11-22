@@ -58,6 +58,19 @@ class ClienteSalonContractTest {
         verifyNoInteractions(disponibilidad);
     }
 
+    @Test void calendarioPublicoNoRevelaLaNotaInternaDelBloqueo() {
+        var bloqueo = new com.ocasion.backend.salones.Entities.DisponibilidadEntity();
+        bloqueo.setFecha(LocalDate.of(2028,2,12));
+        bloqueo.setHora_inicio(bloqueo.getFecha().atTime(15,0));
+        bloqueo.setHora_fin(bloqueo.getFecha().atTime(18,0));
+        bloqueo.setObservaciones("Nota privada del propietario");
+        when(disponibilidad.findDisponibilidadPorMes(42,LocalDate.of(2028,2,1),LocalDate.of(2028,2,29)))
+            .thenReturn(List.of(bloqueo));
+        var respuesta = service.obtenerDisponibilidadMensual(42,2,2028).getFirst();
+        assertEquals("BLOQUEO_PROPIETARIO",respuesta.getTipo_bloqueo());
+        assertEquals(java.time.LocalTime.of(15,0),respuesta.getHora_inicio());
+    }
+
     @Test void detalleExponeHorarioDiarioDesdeAperturaSinPublicarObservaciones() {
         var inicial = new com.ocasion.backend.salones.Entities.DisponibilidadEntity();
         inicial.setFecha(LocalDate.of(2027, 1, 10));

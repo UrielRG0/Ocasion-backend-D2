@@ -100,7 +100,8 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
             if (d.getHora_inicio() != null) dto.setHora_inicio(d.getHora_inicio().toLocalTime());
             if (d.getHora_fin() != null) dto.setHora_fin(d.getHora_fin().toLocalTime());
             
-            dto.setTipo_bloqueo(d.getObservaciones()); 
+            // Las notas del propietario no se exponen en el calendario público.
+            dto.setTipo_bloqueo("BLOQUEO_PROPIETARIO");
             return dto;
         }).collect(Collectors.toList());
     }
