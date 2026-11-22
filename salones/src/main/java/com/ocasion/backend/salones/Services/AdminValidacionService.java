@@ -134,7 +134,13 @@ public class AdminValidacionService {
 
         }
 
-        salonRepository.save(salon);
+        var momento = java.time.Instant.now();
+        documentos.setFechaResolucion(momento);
+        documentos.eliminarArchivos(momento);
+        // El veredicto y la supresión se confirman o revierten juntos.
+        // findByIdForUpdate devuelve una entidad gestionada; evitar merge sobre
+        // la colección con huérfanos ya eliminados en esta misma transacción.
+        salonRepository.flush();
     }
 
     private java.util.List<String> urlsFotos(DocumentosValidacionSalonEntity docs, String baseUrl,

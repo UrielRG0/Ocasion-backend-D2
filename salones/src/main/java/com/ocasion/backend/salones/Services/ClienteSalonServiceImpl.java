@@ -30,7 +30,7 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
 
     @Override
     public Page<SalonCardResponseDTO> buscarSalones(FiltroBusquedaDTO filtros, Pageable pageable) {
-        return catalogoConsulta.buscar(filtros, pageable);
+        return catalogoConsulta.buscar(filtros, pageable, usuarioActual());
     }
 
     @Override
@@ -98,9 +98,24 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
     }
 
     private SalonEntity salonPublicado(Integer id) {
-        return salonRepository.findById(id).filter(s -> "PUBLICADO".equals(s.getEstado()))
+        SalonEntity salon = salonRepository.findById(id).filter(s -> "PUBLICADO".equals(s.getEstado()))
             .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.NOT_FOUND, "Salón no disponible"));
+        Integer usuario = usuarioActual();
+        if (usuario != null && usuario.equals(salon.getUsuariosIdUser()))
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, "No puede reservar su propio salón. Utilice el panel de administración.");
+        return salon;
+    }
+
+    private Integer usuarioActual() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)
+            return null;
+        try { return Integer.valueOf(auth.getName()); }
+        catch (NumberFormatException ex) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Identidad de usuario inválida");
+        }
     }
 
     private List<String> fotos(SalonEntity salon) {

@@ -21,7 +21,8 @@ public class PropietarioConsulta {
             select s.id_salon, s.nombreSalon, s.capacidadPersonas, s.descripcion, s.precio_hora,
                    s.usuariosIdUser, s.estado, s.fechaSolicitud, s.imagen,
                    u.id_ubicacion, u.direccion, u.latitud, u.longitud, u.ciudad, u.CP,
-                   d.idExpediente, d.estadoRevisionAdmin, d.observacionesAdmin
+                   d.idExpediente, d.estadoRevisionAdmin, d.observacionesAdmin,
+                   d.fechaResolucion, d.archivosEliminadosEn
             from SalonEntity s left join s.ubicacion u left join s.documentosValidacionSalonEntity d
             where s.usuariosIdUser = :propietario order by s.id_salon
             """,Object[].class).setParameter("propietario",propietario).getResultList();
@@ -35,7 +36,8 @@ public class PropietarioConsulta {
             if(f[9]!=null) s.setUbicacion(new SalonPropietarioDTO.Ubicacion((Integer)f[9],(String)f[10],
                 (BigDecimal)f[11],(BigDecimal)f[12],(String)f[13],(String)f[14]));
             if(f[15]!=null) s.setDocumentosValidacionSalonEntity(new SalonPropietarioDTO.Documentos(
-                (Integer)f[15],(String)f[16],(String)f[17]));
+                (Integer)f[15],(String)f[16],(String)f[17],
+                (java.time.Instant)f[18],(java.time.Instant)f[19]));
             s.setVerificado("APROBADO".equals(f[16])); salones.put(s.getId_salon(),s);
         }
         if(salones.isEmpty()) return List.of();

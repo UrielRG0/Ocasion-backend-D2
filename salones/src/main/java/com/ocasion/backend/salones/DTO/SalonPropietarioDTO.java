@@ -28,7 +28,8 @@ public class SalonPropietarioDTO {
 
     public record Ubicacion(Integer id_ubicacion, String direccion, BigDecimal latitud,
         BigDecimal longitud, String ciudad, String cp) {}
-    public record Documentos(Integer idExpediente, String estadoRevisionAdmin, String observacionesAdmin) {}
+    public record Documentos(Integer idExpediente, String estadoRevisionAdmin, String observacionesAdmin,
+        java.time.Instant fechaResolucion, java.time.Instant archivosEliminadosEn) {}
     public record Servicio(Integer idServicio, String nombreServicio, String descripcion) {}
     public record ServicioAsignado(IdServicio id, Servicio servicio, Integer numeroServiciosSolicitados) {}
     public record IdServicio(Integer salonId, Integer servicioId) {}

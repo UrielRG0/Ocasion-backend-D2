@@ -13,6 +13,23 @@ import com.ocasion.backend.salones.Entities.SalonEntity;
 
 @Repository
 public interface SalonRepository extends JpaRepository<SalonEntity, Integer>, JpaSpecificationExecutor<SalonEntity> {
+    interface EstadoPropio {
+        String getEstado();
+        Integer getIdExpediente();
+        String getRevision();
+        String getObservaciones();
+        java.time.Instant getFechaResolucion();
+        java.time.Instant getArchivosEliminadosEn();
+    }
+    @org.springframework.data.jpa.repository.Query("""
+        select s.estado as estado, d.idExpediente as idExpediente, d.estadoRevisionAdmin as revision,
+               d.observacionesAdmin as observaciones, d.fechaResolucion as fechaResolucion,
+               d.archivosEliminadosEn as archivosEliminadosEn
+        from SalonEntity s left join s.documentosValidacionSalonEntity d
+        where s.id_salon = :id and s.usuariosIdUser = :propietario
+        """)
+    java.util.Optional<EstadoPropio> findEstadoPropio(@org.springframework.data.repository.query.Param("id") Integer id,
+        @org.springframework.data.repository.query.Param("propietario") Integer propietario);
     @org.springframework.data.jpa.repository.Query("select count(s) from SalonEntity s where s.id_salon = :id and s.usuariosIdUser = :propietario")
     long countPropio(@org.springframework.data.repository.query.Param("id") Integer id,
         @org.springframework.data.repository.query.Param("propietario") Integer propietario);

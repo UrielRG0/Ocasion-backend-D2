@@ -31,6 +31,45 @@ class CatalogoRendimientoTest {
  @Autowired com.ocasion.backend.salones.Repositories.SalonRepository salones;
  @Autowired org.springframework.test.web.servlet.MockMvc mvc;
 
+ @Test void excluyePropiosAntesDePaginarYRechazaDetalleYCalendarioParaReservar() {
+   Integer propioId = null;
+   for (int n=0; n<5; n++) {
+     var salon = new SalonEntity(); salon.setNombreSalon("Catálogo " + n);
+     salon.setEstado("PUBLICADO"); salon.setUsuariosIdUser(n<2?9:8);
+     salon.setPrecio_hora(BigDecimal.TEN); em.persist(salon);
+     if(n==0) propioId=salon.getId_salon();
+   }
+   em.flush(); em.clear();
+   var contextoAnterior = org.springframework.security.core.context.SecurityContextHolder.getContext();
+   var contexto = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+   contexto.setAuthentication(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+     "9", "", java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_Cliente"))));
+   org.springframework.security.core.context.SecurityContextHolder.setContext(contexto);
+   try {
+     var primera=service.buscarSalones(new FiltroBusquedaDTO(),PageRequest.of(0,2));
+     var segunda=service.buscarSalones(new FiltroBusquedaDTO(),PageRequest.of(1,2));
+     assertEquals(3,primera.getTotalElements()); assertEquals(2,primera.getNumberOfElements());
+     assertEquals(1,segunda.getNumberOfElements());
+     Integer id=propioId;
+     assertTrue(primera.stream().noneMatch(s->s.getId_salon().equals(id)));
+     assertEquals(403,assertThrows(org.springframework.web.server.ResponseStatusException.class,()->service.obtenerDetalle(id)).getStatusCode().value());
+     assertEquals(403,assertThrows(org.springframework.web.server.ResponseStatusException.class,()->service.obtenerDisponibilidadMensual(id,11,2026)).getStatusCode().value());
+     org.springframework.security.core.context.SecurityContextHolder.clearContext();
+     assertEquals(5,service.buscarSalones(new FiltroBusquedaDTO(),PageRequest.of(0,10)).getTotalElements());
+   } finally { org.springframework.security.core.context.SecurityContextHolder.setContext(contextoAnterior); }
+ }
+
+ @Test void seguimientoDePropietarioUsaUnaConsultaSinBinariosYNiegaOtroPropietario() {
+   crearDatos();
+   var id=em.createQuery("select s.id_salon from SalonEntity s order by s.id_salon",Integer.class).setMaxResults(1).getSingleResult();
+   var stats=em.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics(); stats.clear();
+   var resultado=documentos.estado(id,99);
+   assertEquals("APROBADO",resultado.documentosValidacionSalonEntity().estadoRevisionAdmin());
+   assertEquals(1,stats.getPrepareStatementCount()); assertEquals(0,stats.getEntityLoadCount());
+   assertEquals(404,assertThrows(org.springframework.web.server.ResponseStatusException.class,()->documentos.estado(id,8)).getStatusCode().value());
+ }
+ @Autowired com.ocasion.backend.salones.Services.DocumentacionSalonService documentos;
+
  @Test void paginaNoCargaEntidadesNiDocumentosYAcotaConsultas() {
    crearDatos();
    var stats=em.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics(); stats.clear();

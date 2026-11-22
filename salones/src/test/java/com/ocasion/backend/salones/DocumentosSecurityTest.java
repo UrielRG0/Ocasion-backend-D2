@@ -28,6 +28,16 @@ class DocumentosSecurityTest {
     @Autowired MockMvc mvc;
     @MockitoBean DocumentacionSalonService documentos;
 
+    @Test void seguimientoUsaElIdAutenticadoYNoPermiteAnonimosOClientes() throws Exception {
+        when(documentos.estado(7,9)).thenReturn(new com.ocasion.backend.salones.DTO.EstadoVerificacionDTO("PUBLICADO",null));
+        mvc.perform(get("/api/v1/salones/7/estado-verificacion").with(user("9").roles("Vendedor")))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
+            .andExpect(jsonPath("$.estado").value("PUBLICADO"));
+        mvc.perform(get("/api/v1/salones/7/estado-verificacion")).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/salones/7/estado-verificacion").with(user("8").roles("Cliente"))).andExpect(status().isForbidden());
+        verify(documentos).estado(7,9); verifyNoMoreInteractions(documentos);
+    }
+
     @Test void documentosPrivadosRechazanClientePropietarioYAnonimo() throws Exception {
         String url = "/api/v1/admin/salones/7/archivo/ine";
         mvc.perform(get(url)).andExpect(status().isForbidden());

@@ -1,0 +1,32 @@
+# Solo para pruebas en GitHub. No utiliza la base ni las redes de la VM.
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ocasion_salon_db
+      MYSQL_ROOT_PASSWORD: ci-only-password
+      MYSQL_ROOT_HOST: "%"
+    tmpfs:
+      - /var/lib/mysql:size=1g
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+  backend:
+    image: ocasion-dom2:ci
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/ocasion_salon_db?serverTimezone=UTC
+      DB_USERNAME: root
+      DB_PASSWORD: ci-only-password
+      JWT_SECRET: dGVzdC1zZWNyZXQtb25seS1mb3ItYXV0b21hdGVkLXRlc3RzLTEyMzQ1Njc4OTA=
+      SHOW_SQL: "false"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65.0 -XX:+ExitOnOutOfMemoryError"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=192m,mode=1777
+    mem_limit: 768m
+    depends_on:
+      mysql:
+        condition: service_healthy

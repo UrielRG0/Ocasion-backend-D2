@@ -56,6 +56,21 @@ public class DocumentosValidacionSalonEntity {
     @Column(name = "observacionesAdmin")
     private String observacionesAdmin;
 
+    // UTC. Se conserva el expediente como constancia, sin los archivos revisados.
+    private java.time.Instant fechaResolucion;
+    private java.time.Instant archivosEliminadosEn;
+
+    public void eliminarArchivos(java.time.Instant momento) {
+        inePropietarioPasaporte = null;
+        documentoPropiedad = null;
+        comprobanteDomSalon = null;
+        vistoBuenoProteccionCivil = null;
+        fotoEstablecimiento = null;
+        fotoPropietario = null;
+        fotosAdicionales.clear(); // orphanRemoval elimina las filas y sus binarios.
+        archivosEliminadosEn = momento;
+    }
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Salonid_salon", referencedColumnName = "id_salon", nullable = false)
     @JsonBackReference

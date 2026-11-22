@@ -2,7 +2,7 @@ name: Seguridad verificable
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [master]
 permissions:
   contents: read
 jobs:
@@ -20,23 +20,6 @@ jobs:
       - run: pip install semgrep
       - name: Analizar cÃ³digo de producciÃ³n
         run: semgrep scan --config p/security-audit --metrics=off --error salones/src/main/java
-  tests:
-    name: Pruebas DOM2 con H2
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: salones
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-      - name: Unitarias, integraciÃ³n y seguridad
-        run: bash mvnw -B test
   dependencies:
     if: github.event_name == 'workflow_dispatch'
     name: Dependencias Java - OWASP Dependency Check

@@ -17,6 +17,9 @@ public class CatalogoConsulta {
     @PersistenceContext private EntityManager em;
 
     public Page<SalonCardResponseDTO> buscar(FiltroBusquedaDTO filtros, Pageable pageable) {
+        return buscar(filtros, pageable, null);
+    }
+    public Page<SalonCardResponseDTO> buscar(FiltroBusquedaDTO filtros, Pageable pageable, Integer excluirPropietario) {
         var cb=em.getCriteriaBuilder();
         var query=cb.createTupleQuery();
         var salon=query.from(SalonEntity.class);
@@ -25,12 +28,12 @@ public class CatalogoConsulta {
         query.multiselect(salon.get("id_salon"),salon.get("nombreSalon"),salon.get("capacidadPersonas"),
             salon.get("precio_hora"),salon.get("imagen"),ubicacion.get("ciudad"),ubicacion.get("direccion"),
             expediente.get("estadoRevisionAdmin"));
-        query.where(SalonSpecification.aplicarFiltros(filtros).toPredicate(salon,query,cb));
+        query.where(SalonSpecification.aplicarFiltros(filtros, excluirPropietario).toPredicate(salon,query,cb));
         var filas=em.createQuery(query).setFirstResult(Math.toIntExact(pageable.getOffset()))
             .setMaxResults(pageable.getPageSize()).getResultList();
         var count=cb.createQuery(Long.class);
         var root=count.from(SalonEntity.class);
-        count.select(cb.count(root)).where(SalonSpecification.aplicarFiltros(filtros).toPredicate(root,count,cb));
+        count.select(cb.count(root)).where(SalonSpecification.aplicarFiltros(filtros, excluirPropietario).toPredicate(root,count,cb));
         long total=em.createQuery(count).getSingleResult();
         if(filas.isEmpty()) return new PageImpl<>(List.of(),pageable,total);
 

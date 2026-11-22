@@ -1,0 +1,9 @@
+**
+!Dockerfile
+!salones/
+!salones/pom.xml
+!salones/src/
+!salones/src/main/
+!salones/src/main/**
+!.deploy-artifact/
+!.deploy-artifact/app.jar

@@ -14,6 +14,13 @@ public class DocumentosSalonController {
     private final DocumentacionSalonService documentos;
     public DocumentosSalonController(DocumentacionSalonService documentos) { this.documentos = documentos; }
 
+    @GetMapping("/api/v1/salones/{id}/estado-verificacion")
+    @PreAuthorize("hasRole('Vendedor')")
+    public ResponseEntity<com.ocasion.backend.salones.DTO.EstadoVerificacionDTO> estado(@PathVariable Integer id, Authentication usuario) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+            .body(documentos.estado(id, Integer.valueOf(usuario.getName())));
+    }
+
     @PostMapping(value = "/api/v1/salones/{id}/documentos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('Vendedor')")
     public ResponseEntity<Map<String, Object>> subir(@PathVariable Integer id, Authentication usuario,

@@ -1,0 +1,82 @@
+name: DOM2 - pruebas y despliegue
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dom2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pruebas:
+    name: Pruebas y compilación Java 21
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: salones/pom.xml
+      - name: Validar automatización de despliegue
+        run: |
+          for script in deploy/*.sh; do bash -n "$script"; done
+          python3 -m unittest discover -s deploy/tests -v
+      - name: Ejecutar pruebas unitarias, de integración y seguridad y crear JAR
+        working-directory: salones
+        run: bash mvnw --batch-mode --no-transfer-progress verify
+      - name: Construir la imagen con el JAR probado
+        run: |
+          mkdir -p .deploy-artifact
+          python3 -c 'from pathlib import Path; import shutil; jars=list(Path("salones/target").glob("*.jar")); assert len(jars)==1; shutil.copyfile(jars[0], ".deploy-artifact/app.jar")'
+          docker build --target ci-runtime -t ocasion-dom2:ci .
+      - name: Probar el contenedor con MySQL 8 temporal
+        run: |
+          docker compose -p "ocasion-dom2-ci-${{ github.run_id }}-${{ github.run_attempt }}" -f deploy/compose.ci.yml up -d --wait --wait-timeout 240
+          docker compose -p "ocasion-dom2-ci-${{ github.run_id }}-${{ github.run_attempt }}" -f deploy/compose.ci.yml exec -T backend wget -q -O - http://127.0.0.1:8081/healthz | python3 -c 'import json,sys; assert json.load(sys.stdin)["status"]=="UP"'
+      - name: Mostrar diagnóstico de contenedores de prueba si falla
+        if: failure()
+        run: docker compose -p "ocasion-dom2-ci-${{ github.run_id }}-${{ github.run_attempt }}" -f deploy/compose.ci.yml logs --tail 60
+      - name: Retirar únicamente los contenedores temporales de CI
+        if: always()
+        run: docker compose -p "ocasion-dom2-ci-${{ github.run_id }}-${{ github.run_attempt }}" -f deploy/compose.ci.yml down --volumes --remove-orphans
+      - name: Resumen de pruebas
+        if: always()
+        run: python3 deploy/summarize-tests.py salones/target/surefire-reports >> "$GITHUB_STEP_SUMMARY"
+      - name: Transferir el JAR probado al job de despliegue
+        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dom2-jar-${{ github.sha }}
+          path: salones/target/*.jar
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+
+  desplegar:
+    name: Publicar DOM2 en Ubuntu
+    needs: pruebas
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    runs-on: [self-hosted, Linux, X64, ocasion-dom2]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: dom2-jar-${{ github.sha }}
+          path: .deploy-artifact
+      - name: Crear imagen, publicar y comprobar MySQL
+        run: bash deploy/deploy-dom2.sh .deploy-artifact

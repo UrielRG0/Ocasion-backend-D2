@@ -16,6 +16,7 @@ class ExpedientePersistenceTest {
     static SessionFactory factory;
     Session session;
     DocumentacionSalonService service;
+    com.ocasion.backend.salones.Services.AdminValidacionService admin;
     Integer id;
     final MockMultipartFile foto = new MockMultipartFile("foto", "foto.png", "image/png",
         new byte[]{(byte)137,80,78,71,13,10,26,10,1});
@@ -44,7 +45,9 @@ class ExpedientePersistenceTest {
         when(repo.saveAndFlush(any())).thenAnswer(i -> {
             session.persist(i.getArgument(0)); session.flush(); return i.getArgument(0);
         });
+        doAnswer(i -> { session.flush(); return null; }).when(repo).flush();
         service = new DocumentacionSalonService(repo);
+        admin = new com.ocasion.backend.salones.Services.AdminValidacionService(repo);
     }
     @AfterEach void limpiar() { session.getTransaction().rollback(); session.close(); }
     @AfterAll static void cerrar() { if (factory != null) factory.close(); }
@@ -64,5 +67,53 @@ class ExpedientePersistenceTest {
         assertEquals(2, actual.getFotosAdicionales().size());
         assertEquals(2L, session.createQuery("select count(f) from FotoExpedienteEntity f", Long.class).getSingleResult());
         DocumentacionSalonService.comprobarExpediente(actual);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(com.ocasion.backend.salones.DTO.VeredictoAdminDTO.Veredicto.class)
+    void resolverEliminaBinariosYFotosAdicionalesEnLaBasePeroConservaResultado(
+            com.ocasion.backend.salones.DTO.VeredictoAdminDTO.Veredicto veredicto) {
+        service.guardar(id,9,foto,pdf,pdf,pdf,List.of(foto,foto),List.of(foto,foto,foto,foto));
+        var salon = session.find(SalonEntity.class,id);
+        salon.setImagen("portada-comercial.jpg");
+        var docs = salon.getDocumentosValidacionSalonEntity();
+        Integer folio = docs.getIdExpediente();
+        docs.setEstadoRevisionAdmin("PENDIENTE");
+        session.flush(); session.clear();
+        var dto = new com.ocasion.backend.salones.DTO.VeredictoAdminDTO();
+        dto.setVeredicto(veredicto); dto.setObservaciones("El documento no es legible");
+        admin.procesarVeredicto(id,dto);
+        session.clear();
+        salon = session.find(SalonEntity.class,id); docs = salon.getDocumentosValidacionSalonEntity();
+        assertEquals(folio,docs.getIdExpediente());
+        assertEquals(veredicto.name(),docs.getEstadoRevisionAdmin());
+        assertNotNull(docs.getFechaResolucion()); assertNotNull(docs.getArchivosEliminadosEn());
+        assertNull(docs.getInePropietarioPasaporte()); assertNull(docs.getDocumentoPropiedad());
+        assertNull(docs.getComprobanteDomSalon()); assertNull(docs.getVistoBuenoProteccionCivil());
+        assertNull(docs.getFotoEstablecimiento()); assertNull(docs.getFotoPropietario());
+        assertTrue(docs.getFotosAdicionales().isEmpty());
+        assertEquals(0L,session.createQuery("select count(f) from FotoExpedienteEntity f where f.expediente.idExpediente = :id",Long.class)
+            .setParameter("id",folio).getSingleResult());
+        assertEquals("PUBLICADO",salon.getEstado());
+        assertEquals("portada-comercial.jpg",salon.getImagen());
+        assertEquals(veredicto == com.ocasion.backend.salones.DTO.VeredictoAdminDTO.Veredicto.APROBADO,salon.isVerificado());
+        assertEquals(404,assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> service.archivo(id,"ine",0)).getStatusCode().value());
+        assertEquals(404,assertThrows(org.springframework.web.server.ResponseStatusException.class,
+            () -> service.archivo(id,"foto-propietario",3)).getStatusCode().value());
+        if (veredicto == com.ocasion.backend.salones.DTO.VeredictoAdminDTO.Veredicto.RECHAZADO) {
+            assertEquals("El documento no es legible",docs.getObservacionesAdmin());
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> DocumentacionSalonService.comprobarExpediente(salonDocumentos()));
+            service.guardar(id,9,foto,pdf,pdf,pdf,List.of(foto),List.of(foto,foto,foto));
+            session.clear();
+            var nuevos = salonDocumentos();
+            assertEquals("SIN_ENVIAR",nuevos.getEstadoRevisionAdmin());
+            assertNull(nuevos.getArchivosEliminadosEn()); assertNull(nuevos.getFechaResolucion());
+            assertNotNull(nuevos.getInePropietarioPasaporte());
+        }
+    }
+    private DocumentosValidacionSalonEntity salonDocumentos() {
+        return session.find(SalonEntity.class,id).getDocumentosValidacionSalonEntity();
     }
 }

@@ -13,6 +13,9 @@ import java.util.Locale;
 
 public class SalonSpecification {
     public static Specification<SalonEntity> aplicarFiltros(FiltroBusquedaDTO filtros) {
+        return aplicarFiltros(filtros, null);
+    }
+    public static Specification<SalonEntity> aplicarFiltros(FiltroBusquedaDTO filtros, Integer excluirPropietario) {
         return (root, query, cb) -> {
             // Criteria usa el atributo literal; Sort interpretaría el guion bajo como una ruta.
             if (query != null && query.getResultType() != Long.class && query.getResultType() != long.class) {
@@ -20,6 +23,8 @@ public class SalonSpecification {
             }
             List<Predicate> condiciones = new ArrayList<>();
             condiciones.add(cb.equal(root.get("estado"), "PUBLICADO"));
+            if (excluirPropietario != null) condiciones.add(cb.or(cb.isNull(root.get("usuariosIdUser")),
+                cb.notEqual(root.get("usuariosIdUser"), excluirPropietario)));
             if (filtros.getCapacidadMin() != null)
                 condiciones.add(cb.ge(root.get("capacidadPersonas"), filtros.getCapacidadMin()));
             if (filtros.getCapacidadMax() != null)

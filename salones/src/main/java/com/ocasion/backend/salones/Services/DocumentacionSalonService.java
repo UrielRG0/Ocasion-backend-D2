@@ -18,6 +18,15 @@ public class DocumentacionSalonService {
 
     public DocumentacionSalonService(SalonRepository salones) { this.salones = salones; }
 
+    @Transactional(readOnly = true)
+    public com.ocasion.backend.salones.DTO.EstadoVerificacionDTO estado(Integer id, Integer propietario) {
+        var fila = salones.findEstadoPropio(id, propietario)
+            .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Salón no encontrado"));
+        var documentos = fila.getIdExpediente() == null ? null : new com.ocasion.backend.salones.DTO.SalonPropietarioDTO.Documentos(
+            fila.getIdExpediente(), fila.getRevision(), fila.getObservaciones(), fila.getFechaResolucion(), fila.getArchivosEliminadosEn());
+        return new com.ocasion.backend.salones.DTO.EstadoVerificacionDTO(fila.getEstado(), documentos);
+    }
+
     @Transactional
     public Map<String, Object> guardar(Integer id, Integer propietario, MultipartFile ine,
             MultipartFile propiedad, MultipartFile comprobante, MultipartFile vobo,
@@ -61,6 +70,8 @@ public class DocumentacionSalonService {
         agregarFotos(docs, "foto-propietario", fotosPersona);
         docs.setEstadoRevisionAdmin("SIN_ENVIAR");
         docs.setObservacionesAdmin(null);
+        docs.setFechaResolucion(null);
+        docs.setArchivosEliminadosEn(null);
         // merge puede crear una copia gestionada del expediente nuevo.
         // El ID generado se lee del resultado persistido, no de la referencia original.
         SalonEntity guardado = salones.saveAndFlush(salon);
@@ -138,7 +149,9 @@ public class DocumentacionSalonService {
         SalonEntity salon = salones.findById(id)
             .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Salón no encontrado"));
         DocumentosValidacionSalonEntity docs = salon.getDocumentosValidacionSalonEntity();
-        if (docs == null || indice < 0) throw error(HttpStatus.NOT_FOUND, "Archivo no encontrado");
+        if (docs == null || indice < 0 || docs.getArchivosEliminadosEn() != null
+                || "APROBADO".equals(docs.getEstadoRevisionAdmin()) || "RECHAZADO".equals(docs.getEstadoRevisionAdmin()))
+            throw error(HttpStatus.NOT_FOUND, "Archivo no encontrado");
         byte[] bytes;
         if (indice > 0) {
             bytes = docs.getFotosAdicionales().stream()

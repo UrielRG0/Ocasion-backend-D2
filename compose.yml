@@ -1,0 +1,34 @@
+services:
+  backend:
+    image: ${DOM2_IMAGE:-ocasion-dom2:local}
+    container_name: ocasion-dom2
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${DOM2_BIND_IP:?Configura la IP de ZeroTier}:${DOM2_HOST_PORT:-8083}:8081"
+    env_file:
+      - ${DOM2_ENV_FILE:?Indica la ruta absoluta al archivo privado .env}
+    environment:
+      SERVER_PORT: "8081"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65.0 -XX:+ExitOnOutOfMemoryError"
+    networks:
+      - base_existente
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=192m,mode=1777
+    mem_limit: 768m
+    pids_limit: 256
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  base_existente:
+    external: true
+    name: ${DOM2_DOCKER_NETWORK:-ocasion-dom2-net}
