@@ -17,4 +17,5 @@ public class SalonDetalleClienteDTO {
     private String direccion;
     private String ciudad;
     private List<String> serviciosCompletos;
+    private HorarioSalonDTO horarioAtencion;
 }

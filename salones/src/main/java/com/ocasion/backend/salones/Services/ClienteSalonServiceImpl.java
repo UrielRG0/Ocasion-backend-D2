@@ -42,6 +42,14 @@ public class ClienteSalonServiceImpl implements ClienteSalonService {
         dto.setVerificado(salon.isVerificado());
         dto.setNombreSalon(salon.getNombreSalon());
         dto.setDescripcion(salon.getDescripcion());
+        disponibilidadRepository.findInicial(id, org.springframework.data.domain.PageRequest.of(0, 1))
+            .stream().findFirst().ifPresent(d -> {
+                if (d.getFecha() != null && d.getHora_inicio() != null && d.getHora_fin() != null
+                    && d.getHora_fin().toLocalTime().isAfter(d.getHora_inicio().toLocalTime())) {
+                    dto.setHorarioAtencion(new HorarioSalonDTO(d.getFecha(),
+                        d.getHora_inicio().toLocalTime(), d.getHora_fin().toLocalTime()));
+                }
+            });
         dto.setGaleriaFotos(fotos(salon));
         dto.setCapacidadPersonas(salon.getCapacidadPersonas());
         

@@ -52,6 +52,28 @@ class ExpedientePersistenceTest {
     @AfterEach void limpiar() { session.getTransaction().rollback(); session.close(); }
     @AfterAll static void cerrar() { if (factory != null) factory.close(); }
 
+    @Test void calendarioNoConfundeHorarioInicialConBloqueos() throws Exception {
+        var salon = session.find(SalonEntity.class, id);
+        var apertura = new DisponibilidadEntity();
+        apertura.setSalon(salon); apertura.setFecha(java.time.LocalDate.of(2027, 1, 10));
+        apertura.setHora_inicio(apertura.getFecha().atTime(10, 0));
+        apertura.setHora_fin(apertura.getFecha().atTime(22, 0));
+        session.persist(apertura);
+        var bloqueo = new DisponibilidadEntity();
+        bloqueo.setSalon(salon); bloqueo.setFecha(apertura.getFecha());
+        bloqueo.setHora_inicio(bloqueo.getFecha().atTime(15, 0));
+        bloqueo.setHora_fin(bloqueo.getFecha().atTime(18, 0));
+        session.persist(bloqueo); session.flush();
+        var metodo = com.ocasion.backend.salones.Repositories.DisponibilidadRepository.class
+            .getMethod("findDisponibilidadPorMes", Integer.class, java.time.LocalDate.class, java.time.LocalDate.class);
+        var hql = metodo.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        var resultado = session.createQuery(hql, DisponibilidadEntity.class)
+            .setParameter("idSalon", id).setParameter("inicioMes", java.time.LocalDate.of(2027, 1, 1))
+            .setParameter("finMes", java.time.LocalDate.of(2027, 1, 31)).getResultList();
+        assertEquals(1, resultado.size());
+        assertEquals(bloqueo.getId_disponibilidad(), resultado.getFirst().getId_disponibilidad());
+    }
+
     @Test void persisteBinariosReemplazaFotosYEliminaHuerfanas() throws Exception {
         service.guardar(id,9,foto,pdf,pdf,pdf,List.of(foto,foto),List.of(foto,foto,foto,foto));
         session.clear();

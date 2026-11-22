@@ -58,6 +58,19 @@ class ClienteSalonContractTest {
         verifyNoInteractions(disponibilidad);
     }
 
+    @Test void detalleExponeHorarioDiarioDesdeAperturaSinPublicarObservaciones() {
+        var inicial = new com.ocasion.backend.salones.Entities.DisponibilidadEntity();
+        inicial.setFecha(LocalDate.of(2027, 1, 10));
+        inicial.setHora_inicio(inicial.getFecha().atTime(10, 0));
+        inicial.setHora_fin(inicial.getFecha().atTime(22, 0));
+        inicial.setObservaciones("Nota privada");
+        when(disponibilidad.findInicial(eq(42), any())).thenReturn(List.of(inicial));
+        var horario = service.obtenerDetalle(42).getHorarioAtencion();
+        assertEquals(inicial.getFecha(), horario.fechaDesde());
+        assertEquals(java.time.LocalTime.of(10, 0), horario.horaInicio());
+        assertEquals(java.time.LocalTime.of(22, 0), horario.horaFin());
+    }
+
     @Test void filtrosInvalidosNoLleganAlRepositorio() {
         var controller = new ClienteSalonController();
         var consulta = mock(ClienteSalonService.class);

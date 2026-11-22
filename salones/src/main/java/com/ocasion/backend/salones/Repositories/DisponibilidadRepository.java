@@ -13,7 +13,11 @@ import java.util.List;
 @Repository
 public interface DisponibilidadRepository extends JpaRepository<DisponibilidadEntity, Integer> {
     
-    @Query("SELECT d FROM DisponibilidadEntity d WHERE d.salon.id_salon = :idSalon AND d.fecha BETWEEN :inicioMes AND :finMes")
+    // La primera fila es la disponibilidad inicial creada junto con el salón.
+    @Query("SELECT d FROM DisponibilidadEntity d WHERE d.salon.id_salon = :idSalon ORDER BY d.id_disponibilidad ASC")
+    List<DisponibilidadEntity> findInicial(@Param("idSalon") Integer idSalon, org.springframework.data.domain.Pageable limite);
+
+    @Query("SELECT d FROM DisponibilidadEntity d WHERE d.salon.id_salon = :idSalon AND d.fecha BETWEEN :inicioMes AND :finMes AND d.id_disponibilidad <> (SELECT MIN(i.id_disponibilidad) FROM DisponibilidadEntity i WHERE i.salon.id_salon = :idSalon)")
     List<DisponibilidadEntity> findDisponibilidadPorMes(
         @Param("idSalon") Integer idSalon, 
         @Param("inicioMes") LocalDate inicioMes, 
