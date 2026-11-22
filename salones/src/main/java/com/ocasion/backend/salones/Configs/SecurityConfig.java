@@ -66,6 +66,7 @@ public class SecurityConfig {
                     "/api/v1/salones/*/detalle",
                     "/api/v1/salones/*/imagenes/*",
                     "/api/v1/salones/*/calendario",
+                    "/api/v1/salones/*/inventario",
                     "/api/v1/servicios"
                 )
                 .permitAll()

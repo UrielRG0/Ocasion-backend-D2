@@ -42,6 +42,15 @@ public class InventarioService {
 
     // --- INVENTARIO (RECURSOS) ---
 
+    @Transactional(readOnly = true)
+    public java.util.List<com.ocasion.backend.salones.DTO.RecursoResponseDTO> listarRecursosPorSalon(Integer idSalon) {
+        if (idSalon == null || idSalon <= 0 || inventarioRepository.countSalonPublicado(idSalon) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Salón no disponible.");
+        }
+        // Proyección: evita materializar el salón, documentos o relaciones privadas.
+        return inventarioRepository.findBySalonId(idSalon);
+    }
+
     @Transactional
     public InventarioSalonEntity agregarRecurso(Integer idSalon, Integer idCategoria, String nombre, Integer cantidad, Integer idPropietario) {
         SalonEntity salon = salonService.referenciaPropia(idSalon, idPropietario);

@@ -14,6 +14,8 @@ import com.ocasion.backend.salones.DTO.SalonDetalleClienteDTO;
 import com.ocasion.backend.salones.DTO.DisponibilidadMesDTO;
 // Importamos el servicio (que vamos a crear en el paso 2)
 import com.ocasion.backend.salones.Services.ClienteSalonService;
+import com.ocasion.backend.salones.Services.InventarioService;
+import com.ocasion.backend.salones.DTO.RecursoResponseDTO;
 
 import java.util.List;
 
@@ -23,6 +25,15 @@ public class ClienteSalonController {
 
     @Autowired
     private ClienteSalonService clienteSalonService; 
+
+    @Autowired
+    private InventarioService inventarioService;
+
+    @GetMapping("/{id}/inventario")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<List<RecursoResponseDTO>> obtenerInventarioPublico(@PathVariable Integer id) {
+        return ResponseEntity.ok(inventarioService.listarRecursosPorSalon(id));
+    }
 
     @GetMapping("/explorar")
     @PreAuthorize("hasRole('Cliente') or permitAll()") 

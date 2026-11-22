@@ -31,6 +31,40 @@ class CatalogoRendimientoTest {
  @Autowired com.ocasion.backend.salones.Repositories.SalonRepository salones;
  @Autowired org.springframework.test.web.servlet.MockMvc mvc;
 
+ @Test void inventarioPublicoDevuelveSoloRecursosDelSalonPublicadoSinModificarExistencias() throws Exception {
+   var publicado = new SalonEntity(); publicado.setNombreSalon("Inventario público");
+   publicado.setEstado("PUBLICADO");publicado.setUsuariosIdUser(99);publicado.setPrecio_hora(BigDecimal.TEN);em.persist(publicado);
+   var categoria = new CategoriaRecursoEntity();categoria.setNombreCategoria("Mobiliario");em.persist(categoria);
+   var recurso = new InventarioSalonEntity();recurso.setSalon(publicado);recurso.setCategoria(categoria);
+   recurso.setNombreRecurso("Sillas");recurso.setCantidadTotal(150);em.persist(recurso);
+   em.flush();em.clear();
+   var stats=em.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();stats.clear();
+   mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/salones/"+publicado.getId_salon()+"/inventario"))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.length()").value(1))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].id_recurso").value(recurso.getIdRecurso()))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].nombre_recurso").value("Sillas"))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].cantidad_total").value(150))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].categoria").doesNotExist())
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].salon").doesNotExist());
+   assertEquals(0,stats.getEntityLoadCount());
+   assertEquals(150,em.find(InventarioSalonEntity.class,recurso.getIdRecurso()).getCantidadTotal());
+ }
+
+ @Test void inventarioPublicoOcultaBorradoresYDevuelveArregloVacioSiNoHayRecursos() throws Exception {
+   var salon = new SalonEntity();salon.setNombreSalon("Sin recursos");salon.setUsuariosIdUser(99);
+   salon.setPrecio_hora(BigDecimal.TEN);salon.setEstado("PUBLICADO");em.persist(salon);em.flush();
+   String ruta="/api/v1/salones/"+salon.getId_salon()+"/inventario";
+   mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(ruta))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().json("[]"));
+   salon.setEstado("BORRADOR");em.flush();
+   mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(ruta))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
+   mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/salones/2147483647/inventario"))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
+ }
+
  @Test void excluyePropiosAntesDePaginarYRechazaDetalleYCalendarioParaReservar() {
    Integer propioId = null;
    for (int n=0; n<5; n++) {
